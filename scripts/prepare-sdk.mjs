@@ -1,41 +1,63 @@
-/** Reproduce the exact maintained Host/creator and public Protocol packages in an ignored directory. */
+/** Delegate exact-source SDK packaging to the provider's verified portable builder. */
 import { execFileSync } from 'node:child_process'
+import { createHash, randomUUID } from 'node:crypto'
 import { copyFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 const root = fileURLToPath(new URL('..', import.meta.url))
 const output = join(root, '.cache/sdk')
-const hostSha = '5101d6ec25409a65d939fb4214b4144a5eb672df'
+const hostSha = '1d2636adbe239550fd70e3e82d4b43681a800833'
 const protocolSha = '465c444c65eec1be8e337b94c2cf658ed536f49c'
+const expected = {
+  'cordisx-0.1.0-beta.2.tgz': 'fbb47a38f3dc31b1db8ffd78b8b182dae1f01ed9de5c07c27f290af95e92a274',
+  'cordisx-protocol-0.1.0-alpha.0.tgz': '9576e28592b44c589aa847f3e57c02db1731a664c5cfa5a0f1fd5c4b5a3e21c8',
+}
 mkdirSync(output, { recursive: true })
 const run = (cmd, args, cwd) => execFileSync(cmd, args, { cwd, stdio: 'inherit' })
-function checkout(repo, sha) {
-  const target = join(root, '.cache', `${repo}-${sha.slice(0, 12)}`)
-  if (!existsSync(target)) {
-    run('git', ['clone', '--filter=blob:none', '--no-checkout', `https://github.com/cordisx/${repo}.git`, target], root)
+const host = join(root, '.cache', `cordisx-${hostSha.slice(0, 12)}`)
+if (!existsSync(host)) {
+  run('git', ['clone', '--filter=blob:none', '--no-checkout', 'https://github.com/cordisx/cordisx.git', host], root)
+}
+run('git', ['fetch', 'origin', hostSha], host)
+run('git', ['checkout', '--detach', hostSha], host)
+const git = args => execFileSync('git', args, { cwd: host, encoding: 'utf8' }).trim()
+if (git(['rev-parse', 'HEAD']) !== hostSha || git(['status', '--porcelain'])) {
+  throw new Error('SDK source is not the clean exact checkpoint')
+}
+// The provider requires a nonexistent output directory and archives HEAD itself.
+// Do not npm-install the Host checkout: recursive Git prepare is not a bootstrap step.
+const build = join(root, '.cache', `sdk-build-${hostSha.slice(0, 12)}-${randomUUID()}`)
+run(process.execPath, ['scripts/prepare-sdk.mjs', build], host)
+const evidencePath = join(build, 'sdk-evidence.json')
+const evidence = JSON.parse(readFileSync(evidencePath, 'utf8'))
+copyFileSync(evidencePath, join(output, 'sdk-evidence.json'))
+for (const pkg of evidence.packages) {
+  if (!/^[a-z0-9.-]+\.tgz$/.test(pkg.filename)) throw new Error('Unexpected SDK package name')
+  copyFileSync(join(build, 'packages', pkg.filename), join(output, pkg.filename))
+}
+if (
+  evidence.hostCommit !== hostSha
+  || !evidence.sources.some(source =>
+    source.location === 'node_modules/@cordisx/protocol' && source.spec.endsWith(`#${protocolSha}`)
+  )
+) throw new Error('SDK input commit mismatch')
+for (const pkg of evidence.packages) {
+  const bytes = readFileSync(join(output, pkg.filename))
+  const sha256 = createHash('sha256').update(bytes).digest('hex')
+  const integrity = `sha512-${createHash('sha512').update(bytes).digest('base64')}`
+  if (
+    sha256 !== pkg.sha256 || integrity !== pkg.integrity
+    || (expected[pkg.filename] && sha256 !== expected[pkg.filename])
+  ) {
+    throw new Error(`SDK digest mismatch: ${pkg.filename}`)
   }
-  run('git', ['fetch', 'origin', sha], target)
-  run('git', ['checkout', '--detach', sha], target)
-  const actual = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: target, encoding: 'utf8' }).trim()
-  if (actual !== sha) throw new Error('SDK checkout mismatch')
-  return target
 }
-function pack(cwd) {
-  const metadata = JSON.parse(readFileSync(join(cwd, 'package.json'), 'utf8'))
-  const name = `${metadata.name.replace('@', '').replace('/', '-')}-${metadata.version}.tgz`
-  run('npm', ['pack', '--ignore-scripts', '--pack-destination', output], cwd)
-  return name
+for (const filename of Object.keys(expected)) {
+  if (!evidence.packages.some(pkg => pkg.filename === filename)) throw new Error(`Missing SDK package: ${filename}`)
 }
-const protocol = checkout('cordisx-protocol', protocolSha)
-// Protocol's package allowlist contains tracked runtime/type/schema files only; no install or build is required to package it.
-const protocolPackage = pack(protocol)
-copyFileSync(join(output, protocolPackage), join(output, `cordisx-protocol-${protocolSha.slice(0, 12)}.tgz`))
-const host = checkout('cordisx', hostSha)
-run('npm', ['ci', '--ignore-scripts'], host)
-run('npm', ['run', 'build'], host)
-const hostPackage = pack(join(host, 'packages/cli'))
-copyFileSync(join(output, hostPackage), join(output, `cordisx-${hostSha.slice(0, 12)}.tgz`))
-pack(join(host, 'packages/create-cordisx-plugin'))
-console.info(
-  `SDK ready: Host ${hostSha}, Protocol ${protocolSha}. This experimental Host includes the public HTTP capability.`,
+copyFileSync(join(output, 'cordisx-0.1.0-beta.2.tgz'), join(output, `cordisx-${hostSha.slice(0, 12)}.tgz`))
+copyFileSync(
+  join(output, 'cordisx-protocol-0.1.0-alpha.0.tgz'),
+  join(output, `cordisx-protocol-${protocolSha.slice(0, 12)}.tgz`),
 )
+console.info(`SDK ready: Host ${hostSha}, Protocol ${protocolSha}; verified portable provider artifacts.`)

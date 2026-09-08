@@ -70,7 +70,7 @@ this evidence does not inspect or dump the user's Keychain.
 
 ## Unified experimental SDK checkpoint
 
-The current wallet/portable preparation pins Host
+An intermediate wallet/portable preparation pinned Host
 `5101d6ec25409a65d939fb4214b4144a5eb672df` and Protocol
 `465c444c65eec1be8e337b94c2cf658ed536f49c`. The provider's Host tarball
 SHA-256 is `638477682bf0de2ce2ba5c1b6f793ffbc46b4e238324b17ba39fcb28e8164dc2`.
@@ -82,6 +82,28 @@ integration, with native validation pending Host diagnosis. The successful
 transaction exercise above belongs to the older explicitly identified Host;
 it must not be attributed to this candidate. No further native retries are
 planned until the provider supplies a targeted fix or diagnostic direction.
+
+## Portable provider checkpoint
+
+The current wallet pins Host `1d2636adbe239550fd70e3e82d4b43681a800833`
+and Protocol `465c444c65eec1be8e337b94c2cf658ed536f49c`. Its Host package
+SHA-256 is `fbb47a38f3dc31b1db8ffd78b8b182dae1f01ed9de5c07c27f290af95e92a274`.
+The owner preparation script invokes that exact Host's portable SDK builder
+without first installing its checkout. It verifies recorded Git inputs, all
+package hashes, and the expected Host/Protocol checkpoint hashes; CI retains
+raw packages, file lists, checksums and `sdk-evidence.json`, including on failure.
+
+This follows diagnosis of the earlier H510 mismatch: Linux and local direct
+packages were byte-identical; all 2,057 file contents matched the initial provider
+package, with only `dist/src/cli.js` permission 0644 versus 0755 differing.
+The provider now fixes executable permissions and bundles complete, verified
+Channel/CLIProxy/Protocol dependencies from exact sources. The new consumer
+incremental `npm install` completed in four seconds without recursive Git prepare.
+Wallet typecheck/build, all six tests, lint/format and development dry-run passed.
+Fresh Linux reproduction is tracked in PR #1. Native interaction on this
+checkpoint remains pending; the Mac was locked and no native restart was made.
+Provider packaging success and consumer checks do not imply a passing full Host
+gate, formal compatibility, merge or release.
 
 ## Unverified and conditional
 

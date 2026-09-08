@@ -23,16 +23,16 @@ is obsolete for this artifact format. Reproduce the pinned development SDK:
 npm ci
 npm run build
 node scripts/prepare-sdk.mjs
-npm --prefix wallet ci --ignore-scripts
+npm --prefix wallet ci
 npm --prefix wallet run check
 npm --prefix wallet run dev:dry-run
 npm --prefix wallet run dev
 ```
 
 These commands run from the repository root. `prepare-sdk` writes only ignored
-`.cache` directories and builds public repositories at exact SHAs. Wallet
+`.cache` directories and delegates to the exact Host commit’s portable builder. It does not install the Host checkout first: the builder archives exact sources, builds and verifies the bundled Git plugins, and normalizes executable permissions. Expected package hashes are checked against the provider checkpoint and retained in CI evidence. Wallet
 package file references point to those reproducible tarballs, never another
-owner's absolute checkout. The pinned experimental capability Host is `5101d6ec25409a65d939fb4214b4144a5eb672df`;
+owner's absolute checkout. The pinned experimental capability Host is `1d2636adbe239550fd70e3e82d4b43681a800833`;
 Protocol `465c444c65eec1be8e337b94c2cf658ed536f49c` supplies the experimental
 types. Host source/verification is coordinated separately; this is not a merged/released dependency.
 
