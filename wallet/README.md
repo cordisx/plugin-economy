@@ -7,7 +7,7 @@ expiry and settlement policy before explicit user reserve consent. Game account
 linking uses short-lived audience-bound proofs; no user spend credential is
 sent to the game server.
 
-The plugin consumes `ctx.http` from the public HTTP contract, with Host-owned
+The plugin consumes the public `http` service (optional discovery via Cordis `ctx.get`) from the public HTTP contract, with Host-owned
 masked token capture. Only opaque references enter plugin code. Reconnect after
 plugin reload; disconnect revokes the connection. Older Hosts display a disabled
 connection with an explicit capability message. No renderer fetch, secret config,
@@ -32,9 +32,9 @@ npm --prefix wallet run dev
 These commands run from the repository root. `prepare-sdk` writes only ignored
 `.cache` directories and builds public repositories at exact SHAs. Wallet
 package file references point to those reproducible tarballs, never another
-owner's absolute checkout. Current baseline Host lacks HTTP runtime support;
+owner's absolute checkout. The pinned experimental capability Host is `4fb60431564931441927c474dd35188f6596274b`;
 Protocol `8adc1aab908263e692bd56ca6165b9aeadabe4b9` supplies the experimental
-types. Capability Host source/verification is coordinated separately.
+types. Host source/verification is coordinated separately; this is not a merged/released dependency.
 
 Vite uses the maintained `cordisXPluginViteConfig()` helper and preserves the
 formal `dist/runtime/artifact.json`, entry, shared chunk, lazy page chunk and
@@ -42,14 +42,14 @@ lazy CSS. The package `files` includes the whole graph. `npm pack --ignore-scrip
 from `wallet/` retains it. Source development still points to `src/wallet.tsx`.
 No private React runtime is bundled.
 
+For a native test with isolated accounts, run `node scripts/native-fixture.mjs` from the repository root and use the generated private fixture session in Host masked capture. This fixture keeps its ledger in memory and cannot target a production database. Grant this plugin the `manager.settings.navigation-items` and `manager.content` extension points using Host Manager, then open Token wallet.
+
 ## Verification scope
 
 `check` typechecks, builds and tests artifact integrity and connection lifecycle.
 Public transport tests use explicit Host fixtures and do not prove the native
 Host adapter. `dev:dry-run` validates the launcher-owned Vite path without
-starting the native app. Real `app://` authorization, page interaction, reload,
-installed-generation replacement and visual theme checks require the capability
-Host and are reported separately. The wallet is not an independently hosted
+starting the native app. Real `app://` authorization, balance retrieval, multi-seat agreement disclosure, user reserve, settlement refresh and account-link proof redemption were exercised against isolated temporary data. Installed-generation replacement and complete theme checks remain separate. The wallet is not an independently hosted
 static login site, and native acceptance is not inferred from a screenshot.
 
 Styles belong only to `.economy-wallet` inside the Host page body. Host owns

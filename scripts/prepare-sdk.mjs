@@ -1,11 +1,11 @@
 /** Reproduce the exact maintained Host/creator and public Protocol packages in an ignored directory. */
 import { execFileSync } from 'node:child_process'
-import { existsSync, mkdirSync, readFileSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 const root = fileURLToPath(new URL('..', import.meta.url))
 const output = join(root, '.cache/sdk')
-const hostSha = 'b75fa2c6f9563924feca271242e2709c136033a3'
+const hostSha = '4fb60431564931441927c474dd35188f6596274b'
 const protocolSha = '8adc1aab908263e692bd56ca6165b9aeadabe4b9'
 mkdirSync(output, { recursive: true })
 const run = (cmd, args, cwd) => execFileSync(cmd, args, { cwd, stdio: 'inherit' })
@@ -32,8 +32,9 @@ pack(protocol)
 const host = checkout('cordisx', hostSha)
 run('npm', ['ci', '--ignore-scripts'], host)
 run('npm', ['run', 'build'], host)
-pack(join(host, 'packages/cli'))
+const hostPackage = pack(join(host, 'packages/cli'))
+copyFileSync(join(output, hostPackage), join(output, `cordisx-${hostSha.slice(0, 12)}.tgz`))
 pack(join(host, 'packages/create-cordisx-plugin'))
 console.info(
-  `SDK ready: Host ${hostSha}, Protocol ${protocolSha}. The baseline Host has no HTTP implementation; wallet shows unavailable until the capability Host is installed.`,
+  `SDK ready: Host ${hostSha}, Protocol ${protocolSha}. This experimental Host includes the public HTTP capability.`,
 )

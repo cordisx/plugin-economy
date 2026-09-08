@@ -18,6 +18,6 @@ The SDK exports `@cordisx/economy/client`; server integration exports
 uses durable orders and operator-approved, one-time migration entitlements.
 
 Status: experimental implementation. Tests cover actual HTTP, ledger failures,
-independent-process races and crash rollback. Native wallet and installed plugin
-verification are tracked separately; no merge, hosted deployment, formal release
+independent-process races and crash rollback. Native wallet connection, consent and settlement were exercised against temporary accounts. Installed plugin
+replacement verification remains separate; no merge, hosted deployment, formal release
 or user acceptance is implied by local tests.
