@@ -32,7 +32,7 @@
   },
   "devDependencies": {
     "@deepseek-ai/cordis": "4.0.1",
-    "cordisx": "file:../.cache/sdk/cordisx-69b0146c4d4b.tgz",
+    "cordisx": "file:../.cache/sdk/cordisx-be2403c70664.tgz",
     "typescript": "^5.9.2",
     "vite": "8.2.2",
     "@cordisx/economy": "file:..",

@@ -6,10 +6,10 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 const root = fileURLToPath(new URL('..', import.meta.url))
 const output = join(root, '.cache/sdk')
-const hostSha = '69b0146c4d4b6acd411758ae4ec3005ea74d0b89'
+const hostSha = 'be2403c70664ff6624671224a405e409874d59c7'
 const protocolSha = '465c444c65eec1be8e337b94c2cf658ed536f49c'
 const expected = {
-  'cordisx-0.1.0-beta.2.tgz': '42f655ad735fd430e6f455bbb2e8da31f5eb564c247a3c31bbb1e9774df131c4',
+  'cordisx-0.1.0-beta.2.tgz': 'abd300ccade96d095563f95f971164838237a376655a55b7f96bdccb3bf2dd46',
   'cordisx-protocol-0.1.0-alpha.0.tgz': '9576e28592b44c589aa847f3e57c02db1731a664c5cfa5a0f1fd5c4b5a3e21c8',
 }
 mkdirSync(output, { recursive: true })

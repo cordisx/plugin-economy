@@ -32,7 +32,7 @@ npm --prefix wallet run dev
 These commands run from the repository root. `prepare-sdk` writes only ignored
 `.cache` directories and delegates to the exact Host commit’s portable builder. It does not install the Host checkout first: the builder archives exact sources, builds and verifies the bundled Git plugins, and normalizes executable permissions. Expected package hashes are checked against the provider checkpoint and retained in CI evidence. Wallet
 package file references point to those reproducible tarballs, never another
-owner's absolute checkout. The pinned experimental capability Host is `69b0146c4d4b6acd411758ae4ec3005ea74d0b89`;
+owner's absolute checkout. The pinned experimental capability Host is `be2403c70664ff6624671224a405e409874d59c7`;
 Protocol `465c444c65eec1be8e337b94c2cf658ed536f49c` supplies the experimental
 types. The wallet applies one npm override referencing that same Protocol dependency throughout the graph so Host and plugin share its module identity. Host source/verification is coordinated separately; this is not a merged/released dependency.
 

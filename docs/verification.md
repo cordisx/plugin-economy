@@ -107,17 +107,17 @@ gate, formal compatibility, merge or release.
 
 ## Shared Protocol checkpoint
 
-The current wallet pins Host `69b0146c4d4b6acd411758ae4ec3005ea74d0b89`
+The current wallet pins Host `be2403c70664ff6624671224a405e409874d59c7`
 with unchanged Protocol `465c444c65eec1be8e337b94c2cf658ed536f49c`.
 Host package SHA-256 is
-`42f655ad735fd430e6f455bbb2e8da31f5eb564c247a3c31bbb1e9774df131c4`.
-The Host no longer bundles a second Protocol module. One consumer override
+`abd300ccade96d095563f95f971164838237a376655a55b7f96bdccb3bf2dd46`.
+This provider checkpoint also isolates plugin compiler selection from tools in ancestor directories. The Host no longer bundles a second Protocol module. One consumer override
 points every Protocol edge to the wallet's exact Protocol tarball. A regression
 check resolves the public HTTP type contract and Agent avatar runtime contract
 from both Host and wallet and requires the same real file paths. No type casts
 or skipped library checks conceal separate module identities.
 
-One incremental normal npm install completed in three seconds. Wallet
+One incremental normal npm install completed in two seconds. Wallet
 build/typecheck, all seven wallet tests, format/lint and development dry-run pass.
 The scoped Protocol/Channel/CLIProxy npm dependency tree passes and is retained
 by CI. An unrestricted npm tree check also traverses the linked Economy parent:
