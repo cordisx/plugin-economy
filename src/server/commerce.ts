@@ -24,9 +24,9 @@ export class Commerce {
     )
     requireCondition(item, 'NOT_FOUND', 'Item not found', 404)
     const total = item.price * body.quantity
-    integer(total, 'total', 1)
+    integer(total, 'total', 0)
     if (body.expectedTotal !== undefined) {
-      integer(body.expectedTotal, 'expectedTotal', 1)
+      integer(body.expectedTotal, 'expectedTotal', 0)
       requireCondition(
         body.expectedTotal === total,
         'PRICE_CHANGED',
@@ -35,7 +35,7 @@ export class Commerce {
       )
     }
     const id = randomUUID()
-    this.store.transfer(actor.instanceId, actor.subject, '$shop', total, 'purchase', id, this.now())
+    if (total > 0) this.store.transfer(actor.instanceId, actor.subject, '$shop', total, 'purchase', id, this.now())
     this.store.run(
       'INSERT INTO orders VALUES(?,?,?,?,?,?)',
       actor.instanceId,
@@ -254,7 +254,7 @@ export class Commerce {
   createItem(instance: string, id: string, title: string, price: number, namespace: string) {
     textId(id, 'item')
     textId(namespace, 'namespace')
-    integer(price, 'price', 1)
+    integer(price, 'price', 0)
     requireCondition(
       typeof title === 'string' && title.length > 0 && title.length <= 100,
       'INVALID_INPUT',
