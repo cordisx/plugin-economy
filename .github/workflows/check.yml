@@ -37,6 +37,27 @@ jobs:
       - run: npm --prefix wallet ci --ignore-scripts
       - run: npm --prefix wallet run check
       - run: npm --prefix wallet run dev:dry-run
+      - name: Record SDK package evidence
+        if: always()
+        run: |
+          for sdk_archive in .cache/sdk/*.tgz; do
+            [ -f "$sdk_archive" ] || continue
+            sha256sum "$sdk_archive" > "$sdk_archive.sha256"
+            sha512sum "$sdk_archive" > "$sdk_archive.sha512"
+            tar -tzf "$sdk_archive" > "$sdk_archive.contents.txt"
+          done
+      - name: Upload SDK package evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sdk-package-evidence
+          include-hidden-files: true
+          retention-days: 7
+          path: |
+            .cache/sdk/*.tgz
+            .cache/sdk/*.tgz.sha256
+            .cache/sdk/*.tgz.sha512
+            .cache/sdk/*.tgz.contents.txt
       - uses: actions/upload-artifact@v4
         with:
           name: wallet-artifact
