@@ -70,6 +70,54 @@ export class Auth {
     this.store.run('INSERT INTO credentials VALUES(?,?,?,?,?,0)', hash(token), instance, subject, kind, expiresAt)
     return { token, expiresAt, instanceId: instance, accountId: kind === 'user' ? subject : undefined }
   }
+  linkProof(actor: Principal, body: { gameServiceId: string; gameAccountId: string }) {
+    requireCondition(actor.kind === 'user', 'FORBIDDEN', 'User session required', 403)
+    textId(body.gameServiceId, 'gameServiceId')
+    textId(body.gameAccountId, 'gameAccountId')
+    requireCondition(
+      this.store.one('SELECT id FROM services WHERE instance=? AND id=?', actor.instanceId, body.gameServiceId),
+      'NOT_FOUND',
+      'Game service not found',
+      404,
+    )
+    const code = secret(), expiresAt = this.now() + 60_000
+    this.store.run(
+      'INSERT INTO linkProofs VALUES(?,?,?,?,?,?,0)',
+      hash(code),
+      actor.instanceId,
+      actor.subject,
+      body.gameServiceId,
+      body.gameAccountId,
+      expiresAt,
+    )
+    return { code, expiresAt }
+  }
+  redeemLinkProof(actor: Principal, body: { code: string; gameAccountId: string }) {
+    requireCondition(actor.kind === 'service', 'FORBIDDEN', 'Service credential required', 403)
+    textId(body.gameAccountId, 'gameAccountId')
+    requireCondition(typeof body.code === 'string' && body.code.length <= 256, 'INVALID_INPUT', 'Link code required')
+    const row = this.store.one<{ account: string }>(
+      'SELECT account FROM linkProofs WHERE hash=? AND instance=? AND service=? AND gameAccount=? AND expires>? AND consumed=0',
+      hash(body.code),
+      actor.instanceId,
+      actor.subject,
+      body.gameAccountId,
+      this.now(),
+    )
+    requireCondition(
+      row,
+      'INVALID_LINK_PROOF',
+      'Link proof expired, consumed, or bound to another service/account',
+      403,
+    )
+    this.store.run('UPDATE linkProofs SET consumed=1 WHERE hash=?', hash(body.code))
+    return {
+      instanceId: actor.instanceId,
+      accountId: row.account,
+      gameServiceId: actor.subject,
+      gameAccountId: body.gameAccountId,
+    }
+  }
   rotate(token: string) {
     return this.store.transaction(() => {
       const actor = this.authenticate(token)

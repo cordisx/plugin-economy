@@ -81,7 +81,20 @@ export class Agreements {
       403,
     )
     const total = this.allocations(body.participants)
+    const seats = new Set<string>()
     for (const p of body.participants) {
+      if (p.participantIds !== undefined) {
+        requireCondition(
+          Array.isArray(p.participantIds) && p.participantIds.length > 0 && p.participantIds.length <= 8,
+          'INVALID_INPUT',
+          'One to eight disclosed participant seats required',
+        )
+        for (const seat of p.participantIds) {
+          textId(seat, 'participantId')
+          requireCondition(!seats.has(seat), 'INVALID_INPUT', 'Seat may belong to only one account')
+          seats.add(seat)
+        }
+      }
       requireCondition(
         p.amount > 0 && p.amount <= service.maxStake,
         'LIMIT_EXCEEDED',

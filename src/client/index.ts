@@ -81,7 +81,7 @@ export class EconomyClient {
   order(id: string) {
     return this.request<Order>('GET', `/orders/${encodeURIComponent(id)}`)
   }
-  purchase(body: { itemId: string; quantity: number }, key: string) {
+  purchase(body: { itemId: string; quantity: number; expectedTotal?: number }, key: string) {
     return this.request<Order>('POST', '/orders', body, key)
   }
   createAgreement(body: AgreementInput, key: string) {
@@ -99,11 +99,24 @@ export class EconomyClient {
   cancel(body: CancelInput, key: string) {
     return this.request<Agreement>('POST', '/cancel', body, key)
   }
+  linkProof(body: { gameServiceId: string; gameAccountId: string }, key: string) {
+    return this.request<{ code: string; expiresAt: number }>('POST', '/link-proofs', body, key)
+  }
+  redeemLinkProof(body: { code: string; gameAccountId: string }, key: string) {
+    return this.request<{ instanceId: string; accountId: string; gameServiceId: string; gameAccountId: string }>(
+      'POST',
+      '/link-proofs/redeem',
+      body,
+      key,
+    )
+  }
   grant(body: GrantInput, key: string) {
     return this.request<{ sourceId: string; eventId: string; amount: number }>('POST', '/rewards/grant', body, key)
   }
   claim(body: { sourceId: string; entitlementId: string }, key: string) {
-    return this.request<{ sourceId: string; entitlementId: string; amount: number }>(
+    return this.request<
+      { instanceId: string; accountId: string; sourceId: string; entitlementId: string; amount: number }
+    >(
       'POST',
       '/migrations/claim',
       body,

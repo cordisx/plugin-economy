@@ -171,3 +171,46 @@ test('session one-time enrollment, rotation, revocation and instance binding', t
   assert.equal(f.req(other, '/me').available, 0)
   rejects(() => f.req(other, `/agreements/${f.agreement().id}`), 'NOT_FOUND')
 })
+test('link proofs expose no spend credential, bind audience/account, expire and recover same-key redemption', t => {
+  const f = fixture(t)
+  const proof = f.req(
+    f.users.alice,
+    '/link-proofs',
+    { gameServiceId: 'game-server', gameAccountId: 'player-7' },
+    'issue-link',
+  )
+  rejects(() => f.req(proof.code, '/me'), 'UNAUTHORIZED')
+  rejects(
+    () => f.req(f.reward, '/link-proofs/redeem', { code: proof.code, gameAccountId: 'player-7' }),
+    'INVALID_LINK_PROOF',
+  )
+  rejects(
+    () => f.req(f.game, '/link-proofs/redeem', { code: proof.code, gameAccountId: 'other' }),
+    'INVALID_LINK_PROOF',
+  )
+  const body = { code: proof.code, gameAccountId: 'player-7' }
+  const bound = f.req(f.game, '/link-proofs/redeem', body, 'redeem-link')
+  assert.equal(bound.accountId, 'alice')
+  f.advance(61_000)
+  assert.deepEqual(f.req(f.game, '/link-proofs/redeem', body, 'redeem-link'), bound)
+  rejects(() => f.req(f.game, '/link-proofs/redeem', body), 'INVALID_LINK_PROOF')
+  const expired = f.req(f.users.alice, '/link-proofs', { gameServiceId: 'game-server', gameAccountId: 'player-8' })
+  f.advance(61_000)
+  rejects(
+    () => f.req(f.game, '/link-proofs/redeem', { code: expired.code, gameAccountId: 'player-8' }),
+    'INVALID_LINK_PROOF',
+  )
+})
+test('expected purchase price is checked before debit and receipts bind instance/account', t => {
+  const f = fixture(t)
+  f.economy.commerce.createItem('one', 'pet.apple', 'Apple', 20, 'pet')
+  rejects(
+    () => f.req(f.users.alice, '/orders', { itemId: 'pet.apple', quantity: 1, expectedTotal: 10 }),
+    'PRICE_CHANGED',
+  )
+  assert.equal(f.req(f.users.alice, '/me').available, 100)
+  const receipt = f.req(f.users.alice, '/orders', { itemId: 'pet.apple', quantity: 1, expectedTotal: 20 })
+  assert.equal(receipt.instanceId, 'one')
+  assert.equal(receipt.accountId, 'alice')
+  assert.deepEqual(f.req(f.users.alice, `/orders/${receipt.id}`), receipt)
+})

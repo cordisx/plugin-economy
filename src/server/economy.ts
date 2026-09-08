@@ -67,6 +67,8 @@ export class Economy {
     requireCondition(method === 'POST', 'NOT_FOUND', 'Route not found', 404)
     requireCondition(body && typeof body === 'object' && !Array.isArray(body), 'INVALID_INPUT', 'JSON object required')
     const operations: Record<string, () => unknown> = {
+      '/v1/link-proofs': () => this.auth.linkProof(actor, body as { gameServiceId: string; gameAccountId: string }),
+      '/v1/link-proofs/redeem': () => this.auth.redeemLinkProof(actor, body as { code: string; gameAccountId: string }),
       '/v1/agreements': () => this.agreements.create(actor, body as AgreementInput),
       '/v1/reserve': () => this.agreements.reserve(actor, body as ReserveInput),
       '/v1/settle': () => this.agreements.settle(actor, body as SettleInput),

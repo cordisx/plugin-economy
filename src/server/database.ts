@@ -35,6 +35,7 @@ export class Store {
         daily INTEGER NOT NULL, accountDaily INTEGER NOT NULL, PRIMARY KEY(instance,id));
       CREATE TABLE IF NOT EXISTS grants(instance TEXT NOT NULL, source TEXT NOT NULL, event TEXT NOT NULL, account TEXT NOT NULL, amount INTEGER NOT NULL, day INTEGER NOT NULL, PRIMARY KEY(instance,source,event));
       CREATE TABLE IF NOT EXISTS entitlements(instance TEXT NOT NULL, source TEXT NOT NULL, id TEXT NOT NULL, account TEXT NOT NULL, amount INTEGER NOT NULL, consumed INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(instance,source,id));
+      CREATE TABLE IF NOT EXISTS linkProofs(hash TEXT PRIMARY KEY, instance TEXT NOT NULL, account TEXT NOT NULL, service TEXT NOT NULL, gameAccount TEXT NOT NULL, expires INTEGER NOT NULL, consumed INTEGER NOT NULL DEFAULT 0);
       CREATE TABLE IF NOT EXISTS items(instance TEXT NOT NULL, id TEXT NOT NULL, title TEXT NOT NULL, price INTEGER NOT NULL, namespace TEXT NOT NULL, PRIMARY KEY(instance,id));
       CREATE TABLE IF NOT EXISTS orders(instance TEXT NOT NULL, id TEXT NOT NULL, account TEXT NOT NULL, item TEXT NOT NULL, quantity INTEGER NOT NULL, total INTEGER NOT NULL, PRIMARY KEY(instance,id));
       CREATE TABLE IF NOT EXISTS inventory(instance TEXT NOT NULL, account TEXT NOT NULL, item TEXT NOT NULL, quantity INTEGER NOT NULL, PRIMARY KEY(instance,account,item));

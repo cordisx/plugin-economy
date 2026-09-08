@@ -13,7 +13,7 @@ export class Commerce {
       actor.instanceId,
     )
   }
-  purchase(actor: Principal, body: { itemId: string; quantity: number }): Order {
+  purchase(actor: Principal, body: { itemId: string; quantity: number; expectedTotal?: number }): Order {
     this.user(actor)
     textId(body.itemId, 'itemId')
     integer(body.quantity, 'quantity', 1, 100)
@@ -25,6 +25,15 @@ export class Commerce {
     requireCondition(item, 'NOT_FOUND', 'Item not found', 404)
     const total = item.price * body.quantity
     integer(total, 'total', 1)
+    if (body.expectedTotal !== undefined) {
+      integer(body.expectedTotal, 'expectedTotal', 1)
+      requireCondition(
+        body.expectedTotal === total,
+        'PRICE_CHANGED',
+        'Expected total does not match the catalog price',
+        409,
+      )
+    }
     const id = randomUUID()
     this.store.transfer(actor.instanceId, actor.subject, '$shop', total, 'purchase', id, this.now())
     this.store.run(
@@ -43,12 +52,19 @@ export class Commerce {
       item.id,
       body.quantity,
     )
-    return { id, itemId: item.id, quantity: body.quantity, total }
+    return {
+      instanceId: actor.instanceId,
+      accountId: actor.subject,
+      id,
+      itemId: item.id,
+      quantity: body.quantity,
+      total,
+    }
   }
   orders(actor: Principal) {
     this.user(actor)
     return this.store.all<Order>(
-      'SELECT id,item AS itemId,quantity,total FROM orders WHERE instance=? AND account=? ORDER BY rowid DESC LIMIT 200',
+      'SELECT instance AS instanceId,account AS accountId,id,item AS itemId,quantity,total FROM orders WHERE instance=? AND account=? ORDER BY rowid DESC LIMIT 200',
       actor.instanceId,
       actor.subject,
     )
@@ -57,7 +73,7 @@ export class Commerce {
     this.user(actor)
     textId(id, 'orderId')
     const order = this.store.one<Order>(
-      'SELECT id,item AS itemId,quantity,total FROM orders WHERE instance=? AND account=? AND id=?',
+      'SELECT instance AS instanceId,account AS accountId,id,item AS itemId,quantity,total FROM orders WHERE instance=? AND account=? AND id=?',
       actor.instanceId,
       actor.subject,
       id,
@@ -178,7 +194,13 @@ export class Commerce {
       body.sourceId,
       body.entitlementId,
     )
-    return { sourceId: body.sourceId, entitlementId: body.entitlementId, amount: row.amount }
+    return {
+      instanceId: actor.instanceId,
+      accountId: actor.subject,
+      sourceId: body.sourceId,
+      entitlementId: body.entitlementId,
+      amount: row.amount,
+    }
   }
   /** Offline operator provisioning; funding is a conserved transfer out of the finite issuer reserve. */
   createSource(

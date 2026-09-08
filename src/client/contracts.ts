@@ -2,7 +2,7 @@
 export const MAX_TOKENS = 1_000_000_000_000
 export type Principal = { instanceId: string; kind: 'user' | 'service'; subject: string }
 export type Game = { id: string; version: string; digest: string; reviewStatus: 'unreviewed' | 'reviewed' }
-export type Allocation = { accountId: string; amount: number }
+export type Allocation = { accountId: string; amount: number; participantIds?: string[] }
 export type Outcome = { id: string; payouts: Allocation[] }
 export type AgreementInput = {
   matchId: string
@@ -37,6 +37,13 @@ export type LedgerEntry = {
   createdAt: number
 }
 export type Item = { id: string; title: string; price: number; namespace: string }
-export type Order = { id: string; itemId: string; quantity: number; total: number }
+export type Order = {
+  instanceId: string
+  accountId: string
+  id: string
+  itemId: string
+  quantity: number
+  total: number
+}
 export type GrantInput = { sourceId: string; accountId: string; eventId: string; amount: number }
 export type ApiErrorBody = { error: { code: string; message: string; retryable: boolean } }

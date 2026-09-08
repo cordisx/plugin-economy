@@ -1,4 +1,4 @@
-import { chmodSync, mkdirSync } from 'node:fs'
+import { chmodSync, mkdirSync, readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { Economy } from './economy.js'
 process.umask(0o077)
@@ -38,6 +38,17 @@ try {
     case 'item':
       economy.commerce.createItem(instance, args[0], args[1], Number(args[2]), args[3])
       break
+    case 'catalog-import': {
+      const items = JSON.parse(readFileSync(args[0], 'utf8'))
+      if (!Array.isArray(items) || items.length > 10000) {
+        throw new Error('Catalog must be an array with at most 10000 items')
+      }
+      economy.store.transaction(() => {
+        for (const item of items) economy.commerce.createItem(instance, item.id, item.title, item.price, item.namespace)
+      })
+      console.log(`Imported ${items.length} items`)
+      break
+    }
     case 'audit':
       economy.store.assertConservation(instance)
       console.log('Supply conserved')

@@ -39,15 +39,28 @@ across keys (service + match, source + event, migration entitlement).
 - `POST /session/rotate` atomically revokes a live user session and returns a new
   session. Same lost-response rule. No automatic rotation retry.
 - `DELETE /session` revokes the authenticated credential.
-- `GET /me` (user) returns `{instanceId,accountId,available,reserved}`. A game
-  server can use the user's temporary economy credential to verify a linked
-  account; it must not persist it or use it to consent on the user's behalf.
+- `GET /me` (user) returns `{instanceId,accountId,available,reserved}`. Never send this credential to a game server, including a server hosted by a friend.
 
 Secrets are random 256-bit credentials, only SHA-256 hashes persist server-side.
 No cookies or query tokens are accepted. Renderer clients must use the public
 Host secret-reference transport, never config/localStorage plaintext. Browser
 origin allowlist defaults empty. Production ingress must enforce TLS, request
 rate limits and connection limits; origin checks do not replace authentication.
+
+## Account linking without spend authority
+
+`POST /link-proofs {gameServiceId,gameAccountId}` (user, idempotent) issues
+`{code,expiresAt}`: a random opaque 60-second proof bound to the authenticated
+economy account, named game service and named game account. The game server
+publishes its configured service ID with its economy URL. User confirms both
+identities, then sends only this code to the game server.
+
+`POST /link-proofs/redeem {code,gameAccountId}` (that service, idempotent) consumes
+it once and returns `{instanceId,accountId,gameServiceId,gameAccountId}`. A wrong
+service/account, expiry or repeated consumption returns `403 INVALID_LINK_PROOF`.
+Same-key redemption replays the durable response, even after expiry. The code
+is never a credential for `/me`, `/reserve` or any wallet operation. Redeeming
+proves identity only; each stake still requires direct user confirmation.
 
 ## Game agreements and escrow
 
@@ -88,6 +101,8 @@ rate limits and connection limits; origin checks do not replace authentication.
 ```
 
 Example timestamp must be replaced with a future Unix **millisecond** timestamp.
+Each participant may include `participantIds: string[]` to disclose all human/Agent seats covered by its aggregated stake. Seat IDs must be unique across accounts and are included in the terms hash. Same-owner human and Agent seats aggregate into one account allocation.
+
 One to eight distinct accounts; positive integer stakes bounded by the service's
 operator-authorized maximum. One to 256 enumerated outcomes, each with unique
 recipient IDs, nonnegative integer payouts, sum exactly equal to the pot.
@@ -146,11 +161,11 @@ and stop after economic expiration. No in-flight extension exists in v1.
 - `GET /ledger` returns the latest 200 account entries: `sequence,transactionId,
   accountId,availableDelta,reservedDelta,reason,reference,createdAt`.
 - `GET /items` returns `{id,title,price,namespace}[]` from the instance's
-  operator-managed catalog. CLI `item` registers immutable priced SKUs, such as
+  operator-managed catalog. CLI `catalog-import INSTANCE catalog.json` atomically imports the complete owner-provided JSON catalog; CLI `item` registers immutable priced SKUs, such as
   `pet.food.apple` with namespace `pet`. Clients cannot set prices or merchants.
-- `POST /orders {itemId,quantity}` (user) returns `{id,itemId,quantity,total}`;
+- `POST /orders {itemId,quantity,expectedTotal?}` (user) returns `{instanceId,accountId,id,itemId,quantity,total}`;
   debits balance, credits the shop reserve and records order/inventory in one
-  transaction. Quantity 1–100. Retrying the same purchase key returns the same
+  transaction. Quantity 1–100. Wallet/Pet callers should always set `expectedTotal` from the displayed catalog; a mismatch returns `409 PRICE_CHANGED` before debit. Retrying the same purchase key returns the same
   receipt. No public debit-only or arbitrary credit operation exists.
 - `GET /orders` returns latest 200 own receipts; `GET /orders/:id` returns one;
   `GET /inventory` returns durable `{itemId,quantity}[]`.
@@ -191,7 +206,7 @@ Migration is an **operator-approved entitlement**, not a client balance import:
 4. `POST /migrations/claim {sourceId,entitlementId}` (user) atomically consumes that
    entitlement and transfers funds. No amount or snapshot balance is accepted.
    Replay same key returns success; another key returns `409 MIGRATION_CONSUMED`.
-   Other accounts receive not-found. Local restore never resets server records.
+   Successful claims include `instanceId,accountId,sourceId,entitlementId,amount`. Other accounts receive not-found. Local restore never resets server records.
 
 ## Failure semantics and hosting
 
