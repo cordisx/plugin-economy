@@ -6,12 +6,12 @@ or permission to merge/deploy. Exact head and CI runs are attached to PR #1.
 
 ## Service and client
 
-Sixteen behavior tests exercise the actual SQLite service and public typed HTTP
+Seventeen behavior tests exercise the actual SQLite service and public typed HTTP
 client: insufficient funds, price mismatch, free SKUs, permanent target-bound
 receipts, duplicate/conflicting idempotency keys, grant namespaces/limits,
 unauthorized game credits, forged service identity, instance/account isolation,
 conserved settlement, partial funding cancellation, expiry/refund recovery,
-one-time migration, enrollment/rotation and audience-bound link proofs.
+one-time migration, enrollment/rotation and audience-bound link proofs. Sponsor HTTP tests also verify source/target identity, guarded instance mismatch, finite budget exhaustion, UTC daily reset and success after retrying an earlier failed key.
 
 Separate OS processes race distinct and identical purchase keys. Only one debit
 is committed; identical requests recover the same order. A worker is SIGKILLed
@@ -50,7 +50,7 @@ An independent profile and CORDISX_HOME were used. The Host's public Manager
 policy controls granted this plugin the Manager navigation/body points. The
 actual wallet body appeared beneath one Host-owned header, with no duplicate
 page chrome. On the older baseline Host, connection controls were disabled with
-an honest capability message. Source updates replaced registrations normally.
+an honest capability message. After a development source update the active body briefly remained blank; navigating away and reopening restored it. This is not proof of seamless installed replacement.
 
 The new Host's masked credential prompt authorized the fixture origin. The
 wallet retrieved and displayed `native-fixture / alice`, available 100 and

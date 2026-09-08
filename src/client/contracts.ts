@@ -53,5 +53,24 @@ export type Order = {
   quantity: number
   total: number
 }
-export type GrantInput = { sourceId: string; accountId: string; eventId: string; amount: number }
+export type GrantInput = {
+  sourceId: string
+  accountId: string
+  eventId: string
+  amount: number
+  expectedInstanceId?: string
+}
+export type GrantReceipt = { instanceId: string; accountId: string; sourceId: string; eventId: string; amount: number }
+export type RewardSourceStatus = {
+  instanceId: string
+  accountId: string
+  serviceId: string
+  sourceId: string
+  available: number
+  dailyLimit: number
+  accountDailyLimit: number
+  dailyGranted: number
+  accountDailyGranted: number
+  resetsAt: number
+}
 export type ApiErrorBody = { error: { code: string; message: string; retryable: boolean } }

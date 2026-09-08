@@ -46,6 +46,8 @@ export class Economy {
       return { revoked: true }
     }
     if (method === 'GET') {
+      const rewardSource = /^\/v1\/rewards\/sources\/([^/]+)\/accounts\/([^/]+)$/.exec(path)
+      if (rewardSource) return this.commerce.rewardSource(actor, rewardSource[1]!, rewardSource[2]!)
       if (path === '/v1/me') return this.wallet(actor)
       if (path === '/v1/ledger') {
         this.commerce.user(actor)

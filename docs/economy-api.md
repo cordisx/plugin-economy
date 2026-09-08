@@ -182,7 +182,7 @@ order. No Pet product code is owned here.
 
 ## Authorized income and one-time migration
 
-`POST /rewards/grant {sourceId,accountId,eventId,amount}` requires a service
+`POST /rewards/grant {sourceId,accountId,eventId,amount,expectedInstanceId?}` requires a service
 credential explicitly assigned to that reward source. Each source is pre-funded
 from a finite issuer reserve by the offline operator. Per-source daily and
 per-account daily limits apply atomically; exhausted funding rejects. A normal
@@ -190,6 +190,42 @@ game service has no source and cannot grant rewards. Event uniqueness is
 `(instance,sourceId,eventId)`, permanently across accounts, credentials,
 reinstalls and plugin versions. The same event with another amount/account is
 `409 EVENT_CONFLICT`, even with a fresh idempotency key.
+
+Sponsor configuration uses a separate Host opaque bearer connection to the same
+origin as the user's wallet. `GET /rewards/sources/:sourceId/accounts/:accountId`
+(`client.rewardSource(sourceId, accountId)`) requires the assigned reward service,
+checks that the target user exists and returns
+`{instanceId,accountId,serviceId,sourceId,available,dailyLimit,accountDailyLimit,dailyGranted,accountDailyGranted,resetsAt}`.
+Compare instance/account with the independent user `/me` result and the configured
+source/service. `/me` itself remains user-only. This status is an observation,
+not a reservation of budget. The grant's optional `expectedInstanceId` guard
+rejects mismatches with `409 INSTANCE_MISMATCH` before transfer; consumers should
+always send it. New grant receipts include
+`{instanceId,accountId,sourceId,eventId,amount}`. Previously cached successful
+responses retain their original shape; do not reuse historical usage events.
+
+Daily limits reset at UTC midnight (`resetsAt` is Unix milliseconds).
+`LIMIT_EXCEEDED` (409) can change after reset; `INSUFFICIENT_FUNDS` (409) means
+finite source budget exhausted; `FORBIDDEN` (403) means wrong service/source or
+user credential; `UNAUTHORIZED` (401) means expired/revoked credential.
+`EVENT_CONFLICT` and `IDEMPOTENCY_CONFLICT` (409) require operator investigation.
+No source-disable field exists; revoke its service credentials to stop access.
+These errors have `retryable:false`, meaning no immediate automatic retry is
+recommended, **not** permanent cancellation. Failed requests do not create a
+tombstone, so the same request can succeed later. A timeout, error, or abort does
+not prove that a concurrent request failed. Keep a bounded durable pending
+intent with the original body/event/key until reconciled; never mint a replacement
+event. A same event/account/amount recovers success even with another key, but
+normal recovery should retain the original key.
+
+For Pet's opt-in work sponsor, start a new Host readWork v2 scope/source/epoch
+baseline only after valid configuration. Use exact supported policy and
+classification, eligible future root-work increments and the existing conversion
+rate. Derive a stable bounded event/key from the account/source, usage identity
+and consumed revision/token interval; never import old revisions. Persist before
+sending. While disconnected, unconfigured, or pending, do not accumulate an
+unbounded future debt; resume from a fresh baseline after reconciliation. This
+is finite operator-sponsored entertainment credit from local partial evidence.
 
 Host local usage is partial, potentially spoofed, and never cloud billing
 proof. An operator choosing to sponsor such rewards must label that evidence,

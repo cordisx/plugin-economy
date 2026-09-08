@@ -5,11 +5,13 @@ import type {
   ApiErrorBody,
   CancelInput,
   GrantInput,
+  GrantReceipt,
   Item,
   LedgerEntry,
   Order,
   PurchaseInput,
   ReserveInput,
+  RewardSourceStatus,
   SettleInput,
   Wallet,
 } from './contracts.js'
@@ -111,8 +113,14 @@ export class EconomyClient {
       key,
     )
   }
+  rewardSource(sourceId: string, accountId: string) {
+    return this.request<RewardSourceStatus>(
+      'GET',
+      `/rewards/sources/${encodeURIComponent(sourceId)}/accounts/${encodeURIComponent(accountId)}`,
+    )
+  }
   grant(body: GrantInput, key: string) {
-    return this.request<{ sourceId: string; eventId: string; amount: number }>('POST', '/rewards/grant', body, key)
+    return this.request<GrantReceipt>('POST', '/rewards/grant', body, key)
   }
   claim(body: { sourceId: string; entitlementId: string }, key: string) {
     return this.request<

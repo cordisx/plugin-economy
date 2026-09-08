@@ -1,5 +1,13 @@
 import { randomUUID } from 'node:crypto'
-import type { GrantInput, Item, Order, Principal, PurchaseInput } from '../client/contracts.js'
+import type {
+  GrantInput,
+  GrantReceipt,
+  Item,
+  Order,
+  Principal,
+  PurchaseInput,
+  RewardSourceStatus,
+} from '../client/contracts.js'
 import { Store } from './database.js'
 import { integer, requireCondition, textId } from './errors.js'
 export class Commerce {
@@ -109,16 +117,14 @@ export class Commerce {
       actor.subject,
     )
   }
-  grant(actor: Principal, body: GrantInput) {
+  rewardSource(actor: Principal, sourceId: string, accountId: string): RewardSourceStatus {
     requireCondition(actor.kind === 'service', 'FORBIDDEN', 'Authorized reward service required', 403)
-    textId(body.sourceId, 'sourceId')
-    textId(body.accountId, 'accountId')
-    textId(body.eventId, 'eventId')
-    integer(body.amount, 'amount', 1)
+    textId(sourceId, 'sourceId')
+    textId(accountId, 'accountId')
     const source = this.store.one<{ service: string; kind: string; daily: number; accountDaily: number }>(
       'SELECT * FROM sources WHERE instance=? AND id=?',
       actor.instanceId,
-      body.sourceId,
+      sourceId,
     )
     requireCondition(
       source && source.service === actor.subject && source.kind === 'reward',
@@ -130,13 +136,59 @@ export class Commerce {
       this.store.one(
         'SELECT id FROM accounts WHERE instance=? AND id=? AND kind=?',
         actor.instanceId,
-        body.accountId,
+        accountId,
         'user',
       ),
       'NOT_FOUND',
       'Account not found',
       404,
     )
+    const day = Math.floor(this.now() / 86_400_000)
+    const daily = this.store.one<{ total: number; accountTotal: number }>(
+      'SELECT COALESCE(SUM(amount),0) AS total,COALESCE(SUM(CASE WHEN account=? THEN amount ELSE 0 END),0) AS accountTotal FROM grants WHERE instance=? AND source=? AND day=?',
+      accountId,
+      actor.instanceId,
+      sourceId,
+      day,
+    )!
+    const budget = this.store.one<{ available: number }>(
+      'SELECT available FROM accounts WHERE instance=? AND id=?',
+      actor.instanceId,
+      `$source:${sourceId}`,
+    )!
+    return {
+      instanceId: actor.instanceId,
+      accountId,
+      serviceId: actor.subject,
+      sourceId,
+      available: budget.available,
+      dailyLimit: source.daily,
+      accountDailyLimit: source.accountDaily,
+      dailyGranted: daily.total,
+      accountDailyGranted: daily.accountTotal,
+      resetsAt: (day + 1) * 86_400_000,
+    }
+  }
+  grant(actor: Principal, body: GrantInput): GrantReceipt {
+    if (body.expectedInstanceId !== undefined) {
+      textId(body.expectedInstanceId, 'expectedInstanceId')
+      requireCondition(
+        body.expectedInstanceId === actor.instanceId,
+        'INSTANCE_MISMATCH',
+        'Sponsor instance differs from the expected wallet instance',
+        409,
+      )
+    }
+    textId(body.eventId, 'eventId')
+    integer(body.amount, 'amount', 1)
+    const source = this.rewardSource(actor, body.sourceId, body.accountId)
+    const receipt = {
+      instanceId: actor.instanceId,
+      accountId: body.accountId,
+      sourceId: body.sourceId,
+      eventId: body.eventId,
+      amount: body.amount,
+    }
     const existing = this.store.one<{ account: string; amount: number }>(
       'SELECT account,amount FROM grants WHERE instance=? AND source=? AND event=?',
       actor.instanceId,
@@ -150,18 +202,12 @@ export class Commerce {
         'Source event was already used for another grant',
         409,
       )
-      return { sourceId: body.sourceId, eventId: body.eventId, amount: body.amount }
+      return receipt
     }
-    const day = Math.floor(this.now() / 86_400_000)
-    const daily = this.store.one<{ total: number; accountTotal: number }>(
-      'SELECT COALESCE(SUM(amount),0) AS total,COALESCE(SUM(CASE WHEN account=? THEN amount ELSE 0 END),0) AS accountTotal FROM grants WHERE instance=? AND source=? AND day=?',
-      body.accountId,
-      actor.instanceId,
-      body.sourceId,
-      day,
-    )!
+    const day = source.resetsAt / 86_400_000 - 1
     requireCondition(
-      daily.total + body.amount <= source.daily && daily.accountTotal + body.amount <= source.accountDaily,
+      source.dailyGranted + body.amount <= source.dailyLimit
+        && source.accountDailyGranted + body.amount <= source.accountDailyLimit,
       'LIMIT_EXCEEDED',
       'Reward daily allowance exceeded',
       409,
@@ -184,7 +230,7 @@ export class Commerce {
       body.amount,
       day,
     )
-    return { sourceId: body.sourceId, eventId: body.eventId, amount: body.amount }
+    return receipt
   }
   claim(actor: Principal, body: { sourceId: string; entitlementId: string }) {
     this.user(actor)

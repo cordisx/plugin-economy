@@ -16,6 +16,8 @@ economy.store.transaction(() => {
 })
 const alice = economy.auth.login(economy.auth.enrollment('native-fixture', 'alice'))
 const bob = economy.auth.login(economy.auth.enrollment('native-fixture', 'bob'))
+const sponsor = economy.auth.createService('native-fixture', 'test-pet-sponsor', 'work', 100)
+economy.commerce.createSource('native-fixture', 'test-work', 'test-pet-sponsor', 'reward', 100, 20, 10)
 const game = economy.auth.createService('native-fixture', 'test-game', '*', 100)
 const agreement = economy.request('POST', '/v1/agreements', game.token, {
   matchId: 'native-review',
@@ -44,7 +46,11 @@ economy.request(
 const server = createEconomyServer(economy)
 server.listen(0, '127.0.0.1', () => {
   const origin = `http://127.0.0.1:${server.address().port}`
-  writeFileSync(`${directory}/session.json`, JSON.stringify({ origin, alice, bob, game, agreement }), { mode: 0o600 })
+  writeFileSync(
+    `${directory}/session.json`,
+    JSON.stringify({ origin, alice, bob, game, agreement, sponsor, rewardSourceId: 'test-work' }),
+    { mode: 0o600 },
+  )
   console.info(
     `Native fixture ready at ${origin}; credentials in ${directory}/session.json. Expected wallet: native-fixture/alice, available=100, reserved=0.`,
   )
