@@ -32,8 +32,8 @@ npm --prefix wallet run dev
 These commands run from the repository root. `prepare-sdk` writes only ignored
 `.cache` directories and builds public repositories at exact SHAs. Wallet
 package file references point to those reproducible tarballs, never another
-owner's absolute checkout. The pinned experimental capability Host is `4fb60431564931441927c474dd35188f6596274b`;
-Protocol `8adc1aab908263e692bd56ca6165b9aeadabe4b9` supplies the experimental
+owner's absolute checkout. The pinned experimental capability Host is `5101d6ec25409a65d939fb4214b4144a5eb672df`;
+Protocol `465c444c65eec1be8e337b94c2cf658ed536f49c` supplies the experimental
 types. Host source/verification is coordinated separately; this is not a merged/released dependency.
 
 Vite uses the maintained `cordisXPluginViteConfig()` helper and preserves the

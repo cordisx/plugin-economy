@@ -32,11 +32,11 @@
   },
   "devDependencies": {
     "@deepseek-ai/cordis": "4.0.1",
-    "cordisx": "file:../.cache/sdk/cordisx-4fb604315649.tgz",
+    "cordisx": "file:../.cache/sdk/cordisx-5101d6ec2540.tgz",
     "typescript": "^5.9.2",
     "vite": "8.2.2",
     "@cordisx/economy": "file:..",
-    "@cordisx/protocol": "file:../.cache/sdk/cordisx-protocol-0.1.0-alpha.0.tgz"
+    "@cordisx/protocol": "file:../.cache/sdk/cordisx-protocol-465c444c65ee.tgz"
   },
   "engines": {
     "node": ">=22.19"

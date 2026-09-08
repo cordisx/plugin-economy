@@ -5,8 +5,8 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 const root = fileURLToPath(new URL('..', import.meta.url))
 const output = join(root, '.cache/sdk')
-const hostSha = '4fb60431564931441927c474dd35188f6596274b'
-const protocolSha = '8adc1aab908263e692bd56ca6165b9aeadabe4b9'
+const hostSha = '5101d6ec25409a65d939fb4214b4144a5eb672df'
+const protocolSha = '465c444c65eec1be8e337b94c2cf658ed536f49c'
 mkdirSync(output, { recursive: true })
 const run = (cmd, args, cwd) => execFileSync(cmd, args, { cwd, stdio: 'inherit' })
 function checkout(repo, sha) {
@@ -28,7 +28,8 @@ function pack(cwd) {
 }
 const protocol = checkout('cordisx-protocol', protocolSha)
 // Protocol's package allowlist contains tracked runtime/type/schema files only; no install or build is required to package it.
-pack(protocol)
+const protocolPackage = pack(protocol)
+copyFileSync(join(output, protocolPackage), join(output, `cordisx-protocol-${protocolSha.slice(0, 12)}.tgz`))
 const host = checkout('cordisx', hostSha)
 run('npm', ['ci', '--ignore-scripts'], host)
 run('npm', ['run', 'build'], host)

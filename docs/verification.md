@@ -68,6 +68,21 @@ Screenshots and private fixture credentials remain in ignored local artifacts;
 none are part of the product package. The public Host transport owns secrets;
 this evidence does not inspect or dump the user's Keychain.
 
+## Unified experimental SDK checkpoint
+
+The current wallet/portable preparation pins Host
+`5101d6ec25409a65d939fb4214b4144a5eb672df` and Protocol
+`465c444c65eec1be8e337b94c2cf658ed536f49c`. The provider's Host tarball
+SHA-256 is `638477682bf0de2ce2ba5c1b6f793ffbc46b4e238324b17ba39fcb28e8164dc2`.
+Wallet typecheck/build, all six wallet tests and development dry-run passed.
+Two independent native launches on this candidate failed with
+`CordisX Vite bootstrap timed out: CDP request timed out: Runtime.evaluate`.
+The manager requested this tested dependency checkpoint be kept for shared
+integration, with native validation pending Host diagnosis. The successful
+transaction exercise above belongs to the older explicitly identified Host;
+it must not be attributed to this candidate. No further native retries are
+planned until the provider supplies a targeted fix or diagnostic direction.
+
 ## Unverified and conditional
 
 - No production user data, real gameplay UI, native Agent execution or live Pet
