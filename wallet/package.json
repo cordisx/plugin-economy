@@ -1,0 +1,47 @@
+{
+  "name": "@cordisx/plugin-economy-wallet",
+  "version": "0.1.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "description": "Shared virtual entertainment Token wallet",
+  "type": "module",
+  "files": [
+    "dist",
+    "README.md",
+    "README.zh-Hans.md"
+  ],
+  "main": "./dist/runtime/module.js",
+  "types": "./dist/types/wallet.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/types/wallet.d.ts",
+      "import": "./dist/runtime/module.js",
+      "default": "./dist/runtime/module.js"
+    }
+  },
+  "scripts": {
+    "build": "vite build && tsc -p tsconfig.json --emitDeclarationOnly",
+    "check": "npm run typecheck && npm run build && npm test",
+    "dev": "cordisx dev ./src/wallet.tsx",
+    "dev:dry-run": "cordisx dev ./src/wallet.tsx --dry-run",
+    "test": "node --test test/manifest.mjs && node --experimental-transform-types --test test/session.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "format": "dprint fmt --config ../dprint.json",
+    "format:check": "dprint check --config ../dprint.json",
+    "lint": "npm --prefix .. run lint"
+  },
+  "devDependencies": {
+    "@deepseek-ai/cordis": "4.0.1",
+    "cordisx": "file:../.cache/sdk/cordisx-be2403c70664.tgz",
+    "typescript": "^5.9.2",
+    "vite": "8.2.2",
+    "@cordisx/economy": "file:..",
+    "@cordisx/protocol": "file:../.cache/sdk/cordisx-protocol-465c444c65ee.tgz"
+  },
+  "engines": {
+    "node": ">=22.19"
+  },
+  "overrides": {
+    "@cordisx/protocol": "$@cordisx/protocol"
+  }
+}

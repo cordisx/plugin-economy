@@ -1,0 +1,50 @@
+{
+  "name": "@cordisx/economy",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=24.14"
+  },
+  "exports": {
+    "./client": {
+      "types": "./dist/client/index.d.ts",
+      "import": "./dist/client/index.js"
+    },
+    "./server": {
+      "types": "./dist/server/index.d.ts",
+      "import": "./dist/server/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "npm run build && node --test test/*.test.mjs",
+    "start": "node dist/server/main.js",
+    "admin": "node dist/server/admin.js",
+    "format": "dprint fmt",
+    "format:check": "dprint check",
+    "lint": "eslint . && stylelint \"wallet/src/**/*.css\"",
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm test",
+    "prepack": "npm run build",
+    "check:wallet": "npm --prefix wallet run check && npm --prefix wallet run dev:dry-run"
+  },
+  "devDependencies": {
+    "@cordisx/eslint-config": "github:cordisx/cordisxmono#32fa3b257cd5a7bfa0bb2d5f1012ca18665d1637",
+    "@projectwallace/stylelint-plugin": "0.7.0",
+    "@types/node": "^24.0.0",
+    "@typescript-eslint/parser": "8.69.0",
+    "dprint": "0.57.1",
+    "eslint": "9.39.4",
+    "stylelint": "17.15.0",
+    "typescript": "5.9.3"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "README.zh-Hans.md",
+    "LICENSE",
+    "docs"
+  ]
+}

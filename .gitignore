@@ -1,9 +1,7 @@
 node_modules/
 dist/
-.env
-.env.*
-!.env.example
 *.sqlite*
-.data/
-coverage/
-.development/
+.env*
+!.env.example
+*.tgz
+.cache/
