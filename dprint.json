@@ -1,0 +1,6 @@
+{
+  "includes": ["**/*.{ts,tsx,js,mjs,json,md}"],
+  "excludes": ["**/node_modules/**", "**/dist/**", "**/package-lock.json"],
+  "typescript": { "quoteStyle": "preferSingle", "semiColons": "asi" },
+  "plugins": ["npm:@dprint/typescript@0.96.1", "npm:@dprint/json@0.23.0", "npm:@dprint/markdown@0.23.3"]
+}
