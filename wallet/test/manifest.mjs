@@ -66,3 +66,13 @@ test('activation registers valid localized routes and releases owned session', (
   assert.deepEqual(registrations, ['en', 'zh-CN', 'overview', '/manager/extensions/wallet', 'manager', 'navigation'])
   disposers.forEach(dispose => dispose())
 })
+
+test('Host and wallet resolve one public Protocol module identity', async () => {
+  const { createRequire } = await import('node:module')
+  const { realpathSync } = await import('node:fs')
+  const walletRequire = createRequire(import.meta.url)
+  const hostRequire = createRequire(walletRequire.resolve('cordisx/contracts'))
+  for (const contract of ['@cordisx/protocol/plugin-http/v1', '@cordisx/protocol/agent-avatar/v1']) {
+    assert.equal(realpathSync(hostRequire.resolve(contract)), realpathSync(walletRequire.resolve(contract)))
+  }
+})

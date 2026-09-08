@@ -85,7 +85,7 @@ planned until the provider supplies a targeted fix or diagnostic direction.
 
 ## Portable provider checkpoint
 
-The current wallet pins Host `1d2636adbe239550fd70e3e82d4b43681a800833`
+The earlier portable checkpoint pinned Host `1d2636adbe239550fd70e3e82d4b43681a800833`
 and Protocol `465c444c65eec1be8e337b94c2cf658ed536f49c`. Its Host package
 SHA-256 is `fbb47a38f3dc31b1db8ffd78b8b182dae1f01ed9de5c07c27f290af95e92a274`.
 The owner preparation script invokes that exact Host's portable SDK builder
@@ -104,6 +104,27 @@ Fresh Linux reproduction is tracked in PR #1. Native interaction on this
 checkpoint remains pending; the Mac was locked and no native restart was made.
 Provider packaging success and consumer checks do not imply a passing full Host
 gate, formal compatibility, merge or release.
+
+## Shared Protocol checkpoint
+
+The current wallet pins Host `69b0146c4d4b6acd411758ae4ec3005ea74d0b89`
+with unchanged Protocol `465c444c65eec1be8e337b94c2cf658ed536f49c`.
+Host package SHA-256 is
+`42f655ad735fd430e6f455bbb2e8da31f5eb564c247a3c31bbb1e9774df131c4`.
+The Host no longer bundles a second Protocol module. One consumer override
+points every Protocol edge to the wallet's exact Protocol tarball. A regression
+check resolves the public HTTP type contract and Agent avatar runtime contract
+from both Host and wallet and requires the same real file paths. No type casts
+or skipped library checks conceal separate module identities.
+
+One incremental normal npm install completed in three seconds. Wallet
+build/typecheck, all seven wallet tests, format/lint and development dry-run pass.
+The scoped Protocol/Channel/CLIProxy npm dependency tree passes and is retained
+by CI. An unrestricted npm tree check also traverses the linked Economy parent:
+it reports the existing shared ESLint Git metadata and React peer-range issues;
+a globally clean dependency tree is not claimed. Linux cold reproduction is
+attached to PR #1. Native validation is still pending; no native app was started
+while the Mac remained locked.
 
 ## Unverified and conditional
 

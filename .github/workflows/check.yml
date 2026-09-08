@@ -35,6 +35,7 @@ jobs:
       - run: npm run build
       - run: node scripts/prepare-sdk.mjs
       - run: npm --prefix wallet ci
+      - run: npm --prefix wallet ls @cordisx/protocol @cordisx/channel @cordisx/plugin-cli-proxy-api --all --json > .cache/sdk/wallet-sdk-dependency-tree.json
       - run: npm --prefix wallet run check
       - run: npm --prefix wallet run dev:dry-run
       - name: Record SDK package evidence
@@ -59,6 +60,7 @@ jobs:
             .cache/sdk/*.tgz.sha512
             .cache/sdk/*.tgz.contents.txt
             .cache/sdk/sdk-evidence.json
+            .cache/sdk/wallet-sdk-dependency-tree.json
       - uses: actions/upload-artifact@v4
         with:
           name: wallet-artifact
