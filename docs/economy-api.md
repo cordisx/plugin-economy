@@ -163,9 +163,9 @@ and stop after economic expiration. No in-flight extension exists in v1.
 - `GET /items` returns `{id,title,price,namespace}[]` from the instance's
   operator-managed catalog. CLI `catalog-import INSTANCE catalog.json` atomically imports the complete owner-provided JSON catalog; CLI `item` registers immutable priced SKUs, such as
   `pet.food.apple` with namespace `pet`. Clients cannot set prices or merchants.
-- `POST /orders {itemId,quantity,expectedTotal?}` (user) returns `{instanceId,accountId,id,itemId,quantity,total}`;
+- `POST /orders {itemId,quantity,expectedTotal?,fulfillmentTarget?}` (user) returns `{instanceId,accountId,id,itemId,quantity,total}`;
   debits balance, credits the shop reserve and records order/inventory in one
-  transaction. Quantity 1–100. Wallet/Pet callers should always set `expectedTotal` from the displayed catalog; a mismatch returns `409 PRICE_CHANGED` before debit. Retrying the same purchase key returns the same
+  transaction. Quantity 1–100. Zero-price SKUs create receipts/inventory without monetary entries. Wallet/Pet callers should always set `expectedTotal` from the displayed catalog; a mismatch returns `409 PRICE_CHANGED` before debit. Retrying the same purchase key returns the same
   receipt. No public debit-only or arbitrary credit operation exists.
 - `GET /orders` returns latest 200 own receipts; `GET /orders/:id` returns one;
   `GET /inventory` returns durable `{itemId,quantity}[]`.
@@ -173,7 +173,9 @@ and stop after economic expiration. No in-flight extension exists in v1.
 Pet should bind its local fulfillment journal to economy URL + returned
 instance/account + order ID. Persist the purchase key before calling; replay
 that request after an uncertain response. Apply local effects once, CAS the
-journal, and reconcile an interrupted local write via the receipt. The economy
+journal, and reconcile an interrupted local write via the receipt. Pet purchases must provide `fulfillmentTarget: {namespace:"pet",storeId}` using a random, persistently stored Pet document identity. The namespace must match the catalog item. Order responses permanently include this target, and consumers must verify it before local fulfillment. Old receipts cannot be adopted into a different store. Legacy untargeted orders remain readable; do not use them as new-install fulfillment claims. Copying an identical storeId into offline forks is outside local CAS protection; this API does not claim distributed exactly-once Pet state.
+
+The economy
 commits the entitlement; Pet owns idempotent consumption/fulfillment. Do not
 trust a caller-provided receipt object without retrieving the authenticated
 order. No Pet product code is owned here.
@@ -196,6 +198,8 @@ and exclude unknown/unattributable/game-inference usage. The economy does not
 turn untrusted usage into an entitlement and does not expose user reward claims.
 
 Migration is an **operator-approved entitlement**, not a client balance import:
+
+A zero legacy balance may be backed up and locally bound after `/me` verification without a cloud claim or any grant. Positive amounts require the following flow.
 
 1. Pet preserves a legacy snapshot and SHA-256 digest before conversion.
 2. Operator reviews the local proof under an explicit migration policy and

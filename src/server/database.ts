@@ -15,6 +15,8 @@ export class Store {
   readonly db: DatabaseSync
   constructor(path: string) {
     this.db = new DatabaseSync(path)
+    const version = (this.db.prepare('PRAGMA user_version').get() as { user_version: number }).user_version
+    requireCondition(version <= 2, 'SCHEMA_TOO_NEW', 'Database was created by a newer economy service', 500)
     this.db.exec(`PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA foreign_keys=ON; PRAGMA busy_timeout=5000;
       CREATE TABLE IF NOT EXISTS instances(id TEXT PRIMARY KEY, supply INTEGER NOT NULL CHECK(supply>=0));
       CREATE TABLE IF NOT EXISTS accounts(instance TEXT NOT NULL REFERENCES instances(id), id TEXT NOT NULL, kind TEXT NOT NULL,
@@ -39,7 +41,13 @@ export class Store {
       CREATE TABLE IF NOT EXISTS items(instance TEXT NOT NULL, id TEXT NOT NULL, title TEXT NOT NULL, price INTEGER NOT NULL, namespace TEXT NOT NULL, PRIMARY KEY(instance,id));
       CREATE TABLE IF NOT EXISTS orders(instance TEXT NOT NULL, id TEXT NOT NULL, account TEXT NOT NULL, item TEXT NOT NULL, quantity INTEGER NOT NULL, total INTEGER NOT NULL, PRIMARY KEY(instance,id));
       CREATE TABLE IF NOT EXISTS inventory(instance TEXT NOT NULL, account TEXT NOT NULL, item TEXT NOT NULL, quantity INTEGER NOT NULL, PRIMARY KEY(instance,account,item));
-      PRAGMA user_version=1;`)
+      `)
+    this.transaction(() => {
+      if (
+        !this.all<{ name: string }>('PRAGMA table_info(orders)').some(column => column.name === 'fulfillmentTarget')
+      ) this.db.exec('ALTER TABLE orders ADD COLUMN fulfillmentTarget TEXT')
+      this.db.exec('PRAGMA user_version=2')
+    })
   }
   one<T>(sql: string, ...args: SQLInputValue[]): T | undefined {
     const row = this.db.prepare(sql).get(...args)

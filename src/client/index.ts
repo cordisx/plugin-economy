@@ -8,6 +8,7 @@ import type {
   Item,
   LedgerEntry,
   Order,
+  PurchaseInput,
   ReserveInput,
   SettleInput,
   Wallet,
@@ -81,7 +82,7 @@ export class EconomyClient {
   order(id: string) {
     return this.request<Order>('GET', `/orders/${encodeURIComponent(id)}`)
   }
-  purchase(body: { itemId: string; quantity: number; expectedTotal?: number }, key: string) {
+  purchase(body: PurchaseInput, key: string) {
     return this.request<Order>('POST', '/orders', body, key)
   }
   createAgreement(body: AgreementInput, key: string) {

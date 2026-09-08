@@ -37,7 +37,15 @@ export type LedgerEntry = {
   createdAt: number
 }
 export type Item = { id: string; title: string; price: number; namespace: string }
+export type FulfillmentTarget = { namespace: string; storeId: string }
+export type PurchaseInput = {
+  itemId: string
+  quantity: number
+  expectedTotal?: number
+  fulfillmentTarget?: FulfillmentTarget
+}
 export type Order = {
+  fulfillmentTarget?: FulfillmentTarget
   instanceId: string
   accountId: string
   id: string

@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import type { GrantInput, Item, Order, Principal } from '../client/contracts.js'
+import type { GrantInput, Item, Order, Principal, PurchaseInput } from '../client/contracts.js'
 import { Store } from './database.js'
 import { integer, requireCondition, textId } from './errors.js'
 export class Commerce {
@@ -13,7 +13,7 @@ export class Commerce {
       actor.instanceId,
     )
   }
-  purchase(actor: Principal, body: { itemId: string; quantity: number; expectedTotal?: number }): Order {
+  purchase(actor: Principal, body: PurchaseInput): Order {
     this.user(actor)
     textId(body.itemId, 'itemId')
     integer(body.quantity, 'quantity', 1, 100)
@@ -23,6 +23,20 @@ export class Commerce {
       body.itemId,
     )
     requireCondition(item, 'NOT_FOUND', 'Item not found', 404)
+    if (body.fulfillmentTarget !== undefined) {
+      requireCondition(
+        body.fulfillmentTarget && typeof body.fulfillmentTarget === 'object',
+        'INVALID_INPUT',
+        'Fulfillment target required',
+      )
+      textId(body.fulfillmentTarget.namespace, 'namespace')
+      textId(body.fulfillmentTarget.storeId, 'storeId')
+      requireCondition(
+        body.fulfillmentTarget.namespace === item.namespace,
+        'INVALID_TARGET',
+        'Fulfillment namespace differs from item namespace',
+      )
+    }
     const total = item.price * body.quantity
     integer(total, 'total', 0)
     if (body.expectedTotal !== undefined) {
@@ -37,13 +51,14 @@ export class Commerce {
     const id = randomUUID()
     if (total > 0) this.store.transfer(actor.instanceId, actor.subject, '$shop', total, 'purchase', id, this.now())
     this.store.run(
-      'INSERT INTO orders VALUES(?,?,?,?,?,?)',
+      'INSERT INTO orders VALUES(?,?,?,?,?,?,?)',
       actor.instanceId,
       id,
       actor.subject,
       item.id,
       body.quantity,
       total,
+      body.fulfillmentTarget ? JSON.stringify(body.fulfillmentTarget) : null,
     )
     this.store.run(
       'INSERT INTO inventory VALUES(?,?,?,?) ON CONFLICT(instance,account,item) DO UPDATE SET quantity=quantity+excluded.quantity',
@@ -59,27 +74,32 @@ export class Commerce {
       itemId: item.id,
       quantity: body.quantity,
       total,
+      ...(body.fulfillmentTarget ? { fulfillmentTarget: body.fulfillmentTarget } : {}),
     }
   }
   orders(actor: Principal) {
     this.user(actor)
-    return this.store.all<Order>(
-      'SELECT instance AS instanceId,account AS accountId,id,item AS itemId,quantity,total FROM orders WHERE instance=? AND account=? ORDER BY rowid DESC LIMIT 200',
+    return this.store.all<Omit<Order, 'fulfillmentTarget'> & { fulfillmentTarget: string | null }>(
+      'SELECT instance AS instanceId,account AS accountId,id,item AS itemId,quantity,total,fulfillmentTarget FROM orders WHERE instance=? AND account=? ORDER BY rowid DESC LIMIT 200',
       actor.instanceId,
       actor.subject,
-    )
+    ).map(order => this.receipt(order))
+  }
+  receipt(row: Omit<Order, 'fulfillmentTarget'> & { fulfillmentTarget: string | null }): Order {
+    const { fulfillmentTarget, ...order } = row
+    return { ...order, ...(fulfillmentTarget ? { fulfillmentTarget: JSON.parse(fulfillmentTarget) } : {}) }
   }
   order(actor: Principal, id: string) {
     this.user(actor)
     textId(id, 'orderId')
-    const order = this.store.one<Order>(
-      'SELECT instance AS instanceId,account AS accountId,id,item AS itemId,quantity,total FROM orders WHERE instance=? AND account=? AND id=?',
+    const order = this.store.one<Omit<Order, 'fulfillmentTarget'> & { fulfillmentTarget: string | null }>(
+      'SELECT instance AS instanceId,account AS accountId,id,item AS itemId,quantity,total,fulfillmentTarget FROM orders WHERE instance=? AND account=? AND id=?',
       actor.instanceId,
       actor.subject,
       id,
     )
     requireCondition(order, 'NOT_FOUND', 'Order not found', 404)
-    return order
+    return this.receipt(order)
   }
   inventory(actor: Principal) {
     this.user(actor)
