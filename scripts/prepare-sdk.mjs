@@ -1,6 +1,6 @@
 /** Reproduce the exact maintained Host/creator and public Protocol packages in an ignored directory. */
 import { execFileSync } from 'node:child_process'
-import { copyFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 const root = fileURLToPath(new URL('..', import.meta.url))
@@ -27,7 +27,7 @@ function pack(cwd) {
   return name
 }
 const protocol = checkout('cordisx-protocol', protocolSha)
-run('npm', ['ci', '--ignore-scripts'], protocol)
+// Protocol's package allowlist contains tracked runtime/type/schema files only; no install or build is required to package it.
 pack(protocol)
 const host = checkout('cordisx', hostSha)
 run('npm', ['ci', '--ignore-scripts'], host)
