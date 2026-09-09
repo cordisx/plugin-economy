@@ -1,4 +1,5 @@
 export const en = {
+  'operation-failed': 'Operation failed. Check your connection and try again.',
   'command.open': 'Open Token wallet',
   'page.title': 'Token wallet',
   'page.description': 'Shared virtual entertainment Token, game approvals and purchase history.',
@@ -43,6 +44,7 @@ export const en = {
 }
 export type Messages = { [K in keyof typeof en]: undefined }
 export const zh: Record<keyof typeof en, string> = {
+  'operation-failed': '操作未完成，请检查连接后重试',
   'command.open': '打开 Token 钱包',
   'page.title': 'Token 钱包',
   'page.description': '共享娱乐 Token、游戏授权与购买记录。',

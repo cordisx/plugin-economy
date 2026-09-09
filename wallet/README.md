@@ -56,3 +56,7 @@ Styles belong only to `.economy-wallet` inside the Host page body. Host owns
 page header, navigation and scroll chrome. The plugin adds no second page header,
 outer padding or nested scroll container. Root dprint/Malva and Stylelint cover
 its CSS. Locale definitions include English and Simplified Chinese.
+
+## Notification feedback
+
+See [operation notifications and candidate SDK setup](../.agents/docs/notifications.md).

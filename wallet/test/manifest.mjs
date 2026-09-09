@@ -22,7 +22,7 @@ test('exports a minimal CordisX plugin module', () => {
   assert.equal(manifest.schemaVersion, 1)
   assert.equal(manifest.id, 'wallet')
   assert.deepEqual(manifest.capabilities, [])
-  assert.deepEqual(inject, ['i18n', 'pages', 'routes', 'slots', 'managerContent'])
+  assert.deepEqual(inject, ['notifications', 'i18n', 'pages', 'routes', 'slots', 'managerContent'])
   assert.equal(typeof apply, 'function')
 })
 

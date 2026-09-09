@@ -1,11 +1,16 @@
 import type { Agreement, LedgerEntry, Order, Wallet } from '@cordisx/economy/client'
-import type { CordisXReactPageProps } from 'cordisx/contracts'
+import type { CordisXReactPageProps, NotificationsV1 } from 'cordisx/contracts'
 import { useEffect, useState } from 'cordisx/react'
 import { Button, Card, Stack, Text } from 'cordisx/ui'
 import type { Messages } from './messages.js'
 import type { WalletSession } from './session.js'
 import './wallet.css'
-export function OverviewPage({ t, session }: CordisXReactPageProps<Messages> & { session: WalletSession }) {
+export function OverviewPage(
+  { t, session, notifications, signal }: CordisXReactPageProps<Messages> & {
+    session: WalletSession
+    notifications: NotificationsV1
+  },
+) {
   const [origin, setOrigin] = useState('http://127.0.0.1:8788')
   const [wallet, setWallet] = useState<Wallet>()
   const [ledger, setLedger] = useState<LedgerEntry[]>([])
@@ -16,7 +21,6 @@ export function OverviewPage({ t, session }: CordisXReactPageProps<Messages> & {
   const [gameAccount, setGameAccount] = useState('')
   const [linkCode, setLinkCode] = useState('')
   const [busy, setBusy] = useState(false)
-  const [error, setError] = useState('')
   useEffect(() => () => {
     session.dispose()
   }, [session])
@@ -32,15 +36,17 @@ export function OverviewPage({ t, session }: CordisXReactPageProps<Messages> & {
   const run = (action: () => Promise<void>) => {
     if (busy) return
     setBusy(true)
-    setError('')
-    void action().catch(reason => setError(reason instanceof Error ? reason.message : 'Request failed')).finally(() =>
-      setBusy(false)
-    )
+    void action().catch(() => {
+      if (!signal.aborted) {
+        notifications.show({ kind: 'operation.failed', type: 'error', message: t('operation-failed') })
+      }
+    }).finally(() => {
+      if (!signal.aborted) setBusy(false)
+    })
   }
   return (
     <Stack gap='large' className='economy-wallet'>
       <Text tone='muted'>{t('virtual')}</Text>
-      {error && <Text tone='danger' role='alert'>{error}</Text>}
       {busy && <Text role='status'>{t('loading')}</Text>}
       {!session.available && <Text tone='muted'>{t('unavailable')}</Text>}
       {!wallet

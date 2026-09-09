@@ -20,7 +20,7 @@ export const manifest = {
   capabilities: [],
 } as const satisfies CordisXPluginManifestV1
 
-export const inject = ['i18n', 'pages', 'routes', 'slots', 'managerContent']
+export const inject = ['notifications', 'i18n', 'pages', 'routes', 'slots', 'managerContent']
 
 const page = {
   $schema: CORDISX_PAGE_SCHEMA_V3,
@@ -52,7 +52,7 @@ export function apply(ctx: Context): void {
   ctx.effect(() => () => session.dispose())
   const mountOverview = defineReactPage<Messages>((props: CordisXReactPageProps<Messages>) => (
     <Suspense fallback={null}>
-      <OverviewPage {...props} session={session} />
+      <OverviewPage {...props} session={session} notifications={ctx.notifications} />
     </Suspense>
   ))
   ctx.i18n.define<Messages>({ namespace: 'wallet', locale: 'en', default: true, messages: en })
