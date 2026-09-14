@@ -1,8 +1,10 @@
-# Economy HTTP API v1
+# Historical Economy HTTP API v1
 
 Implementation owner: `cordisx/plugin-economy`. Experimental, implemented API;
 this is the shared service/client contract, not a Host Protocol specification.
 TypeScript types: [contracts](../src/client/contracts.ts), [client](../src/client/index.ts).
+
+This document records the historical contract for audit and receipt recovery. New `POST /linkproofs`, `/agreements`, `/reserve`, `/settle`, `/cancel`, `/orders`, `/rewards/grant`, and `/migrations/claim` are retired with `410 ENTRY_RETIRED`. An exact previously committed actor/key/operation/body can only recover its saved response. Reads and the existing private actual Host usage issuer remain supported. Legacy `/income/work` and `/income/history-declaration` are retired. There is no startup or periodic expiry refund. Use [local spending](local-spend.md) for current mutations.
 
 ## Authority and transport
 

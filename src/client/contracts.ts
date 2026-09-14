@@ -27,6 +27,8 @@ export type SettleInput =
 export type CancelInput = { agreementId: string; reason: string }
 export type Wallet = { instanceId: string; accountId: string; available: number; reserved: number }
 export type LedgerEntry = {
+  /** Authoritative agreement service provenance; never a wallet namespace. */
+  serviceId?: string | null
   sequence: number
   transactionId: string
   accountId: string
@@ -74,3 +76,84 @@ export type RewardSourceStatus = {
   resetsAt: number
 }
 export type ApiErrorBody = { error: { code: string; message: string; retryable: boolean } }
+
+export type HistoryDeclarationRequest = {
+  contract: 'economy.history-declaration/v1'
+  id: string
+  stage: 'begin' | 'confirm' | 'cancel' | 'lookup'
+  statement: string
+}
+export type HistoryDeclarationReceipt = {
+  contract: 'economy.history-declaration/v1'
+  instanceId: string
+  accountId: string
+  id: string
+  from: 'requires-retirement'
+  to: 'never-enabled'
+  statement: string
+  createdAt: number
+  status: 'pending' | 'confirmed' | 'cancelled'
+}
+
+export type WorkTakeoverReceipt = {
+  contract: 'economy.current-scope-takeover/v1'
+  id: string
+  instanceId: string
+  accountId: string
+  scopeId: string
+  baseline: {
+    scopeId: string
+    sourceId: string
+    epoch: string
+    revision: number
+    tokens: number
+    observedThrough: number
+  }
+  createdAt: number
+  policy: 'durable-admitted-v1'
+  legacyPetWorkChannel: 'closed'
+  admittedPrefix: { tokens: number; amount: number; remainder: number; basis: 'host-admitted-epoch-zero' }
+  legacyHistory: 'unresolved'
+}
+export type WorkIncomeRecord = {
+  eventId: string
+  kind: 'admitted-prefix-correction' | 'admitted-prefix' | 'admitted-delta' | 'epoch-anchor' | 'legacy-observation'
+  amount: number
+  remainderBefore: number
+  remainderAfter: number
+  creditedTokens: number
+  snapshot: unknown
+  from?: WorkTakeoverReceipt['baseline']
+  createdAt: number
+}
+export type WorkScopeCorrectionPlan = {
+  contract: 'economy.empty-work-scope-correction/v1'
+  instanceId: string
+  accountId: string
+  fromScopeId: string
+  toScopeId: string
+  expectedEventId: string
+  evidenceDigest: string
+}
+export type WorkScopeCorrection = WorkScopeCorrectionPlan & {
+  id: string
+  status: 'prepared' | 'completed'
+  plan: WorkScopeCorrectionPlan
+  audit: unknown
+  auditDigest: string
+  preparedAt: number
+  receipt?: unknown
+}
+export type WorkIncomeState = {
+  scopeCorrection?: WorkScopeCorrection
+  instanceId: string
+  accountId: string
+  status: 'pristine' | 'active' | 'reconciliation-required'
+  blockers: string[]
+  takeover?: WorkTakeoverReceipt
+  cursor?: WorkTakeoverReceipt['baseline']
+  remainder: number
+  earned: number
+  legacySponsoredEarned: number
+  records: WorkIncomeRecord[]
+}

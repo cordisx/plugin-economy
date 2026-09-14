@@ -6,6 +6,8 @@ import type {
   CancelInput,
   GrantInput,
   GrantReceipt,
+  HistoryDeclarationReceipt,
+  HistoryDeclarationRequest,
   Item,
   LedgerEntry,
   Order,
@@ -14,6 +16,7 @@ import type {
   RewardSourceStatus,
   SettleInput,
   Wallet,
+  WorkIncomeState,
 } from './contracts.js'
 export type Transport = (
   request: { method: string; url: string; headers: Record<string, string>; body?: string; signal?: AbortSignal },
@@ -66,6 +69,9 @@ export class EconomyClient {
     }
     return parsed as T
   }
+  historyDeclaration(request: HistoryDeclarationRequest) {
+    return this.request<HistoryDeclarationReceipt>('POST', '/income/history-declaration', request)
+  }
   me(signal?: AbortSignal) {
     return this.request<Wallet>('GET', '/me', undefined, undefined, signal)
   }
@@ -112,6 +118,9 @@ export class EconomyClient {
       body,
       key,
     )
+  }
+  workIncome() {
+    return this.request<WorkIncomeState>('GET', '/income/work/state')
   }
   rewardSource(sourceId: string, accountId: string) {
     return this.request<RewardSourceStatus>(

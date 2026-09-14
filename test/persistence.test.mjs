@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { fork } from 'node:child_process'
+import { generateKeyPairSync } from 'node:crypto'
 import { once } from 'node:events'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -19,7 +20,12 @@ function setup(t) {
     economy.store.transfer('one', '$issuer', 'alice', 100, 'operator-test', 'fixture', Date.now())
   )
   economy.commerce.createItem('one', 'pet.apple', 'Apple', 60, 'pet')
-  return { path, economy, token: economy.auth.login(economy.auth.enrollment('one', 'alice')).token }
+  return {
+    path,
+    economy,
+    receiptKey: generateKeyPairSync('ed25519').privateKey.export({ type: 'pkcs8', format: 'pem' }),
+    token: economy.auth.login(economy.auth.enrollment('one', 'alice')).token,
+  }
 }
 async function worker(path, mode, token = '', key = '') {
   const child = fork(new URL('./worker.mjs', import.meta.url), [path, mode, token, key], {
@@ -31,8 +37,8 @@ async function worker(path, mode, token = '', key = '') {
 test('two OS processes racing purchases cannot double-spend', async t => {
   const f = setup(t)
   const children = await Promise.all([
-    worker(f.path, 'buy', f.token, 'parallel-1'),
-    worker(f.path, 'buy', f.token, 'parallel-2'),
+    worker(f.path, 'buy', f.receiptKey, 'parallel-1'),
+    worker(f.path, 'buy', f.receiptKey, 'parallel-2'),
   ])
   const responses = children.map(child => once(child, 'message'))
   children.forEach(child => child.send('go'))
@@ -45,8 +51,8 @@ test('two OS processes racing purchases cannot double-spend', async t => {
 test('same-key purchases racing across processes return one durable order', async t => {
   const f = setup(t)
   const children = await Promise.all([
-    worker(f.path, 'buy', f.token, 'shared-key'),
-    worker(f.path, 'buy', f.token, 'shared-key'),
+    worker(f.path, 'buy', f.receiptKey, 'shared-key'),
+    worker(f.path, 'buy', f.receiptKey, 'shared-key'),
   ])
   const responses = children.map(child => once(child, 'message'))
   children.forEach(child => child.send('go'))

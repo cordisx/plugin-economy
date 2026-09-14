@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
 import { Economy } from '../dist/server/economy.js'
+import { historicalRequest } from './historical-fixture.mjs'
 function fixture(t) {
   const dir = mkdtempSync(join(tmpdir(), 'economy-'))
   let now = 1_800_000_000_000
@@ -22,7 +23,7 @@ function fixture(t) {
   economy.commerce.createSource('one', 'welcome', 'reward-server', 'reward', 1000, 500, 100)
   let serial = 0
   const req = (token, path, body, key = `request-${++serial}`) =>
-    economy.request(body === undefined ? 'GET' : 'POST', `/v1${path}`, token, body, key)
+    historicalRequest(economy, body === undefined ? 'GET' : 'POST', `/v1${path}`, token, body, key)
   for (const accountId of ['alice', 'bob']) {
     req(reward, '/rewards/grant', { sourceId: 'welcome', accountId, eventId: `welcome:${accountId}`, amount: 100 })
   }
@@ -69,6 +70,9 @@ test('unreviewed game explicit user reserves and conserved settlement, no servic
   f.req(f.game, '/settle', input, 'settle-once')
   assert.equal(f.req(f.users.alice, '/me').available, 110)
   assert.equal(f.req(f.users.bob, '/me').available, 90)
+  const ledger = f.req(f.users.alice, '/ledger')
+  assert(ledger.filter(e => e.reference === a.id).every(e => e.serviceId === 'game-server'))
+  assert(ledger.filter(e => e.reason === 'reward').every(e => e.serviceId === null))
   f.economy.store.assertConservation('one')
 })
 test('conflicting retries, different authorities and unknown game terms cannot mutate funds', t => {

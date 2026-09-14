@@ -22,7 +22,7 @@ export class Auth {
   /** CLI/operator boundary. Never expose these provisioning methods as HTTP routes. */
   createInstance(id: string, supply: number) {
     textId(id, 'instance')
-    integer(supply, 'supply', 1)
+    integer(supply, 'supply', 0)
     this.store.transaction(() => {
       requireCondition(
         !this.store.one('SELECT id FROM instances WHERE id=?', id),
@@ -33,7 +33,7 @@ export class Auth {
       this.store.run('INSERT INTO instances VALUES(?,?)', id, supply)
       this.store.run('INSERT INTO accounts VALUES(?,?,?,0,0)', id, '$issuer', 'system')
       this.store.run('INSERT INTO accounts VALUES(?,?,?,0,0)', id, '$shop', 'system')
-      this.store.move(id, '$issuer', supply, 0, 'genesis', id, this.now(), 'genesis')
+      if (supply > 0) this.store.move(id, '$issuer', supply, 0, 'genesis', id, this.now(), 'genesis')
       this.store.assertConservation(id)
     })
   }
@@ -123,7 +123,23 @@ export class Auth {
       const actor = this.authenticate(token)
       requireCondition(actor.kind === 'user', 'FORBIDDEN', 'Only user sessions rotate here', 403)
       this.revoke(token)
-      return this.issue(actor.instanceId, actor.subject, 'user', 3_600_000)
+      const session = this.issue(actor.instanceId, actor.subject, 'user', 3_600_000)
+      if (this.store.one("SELECT name FROM sqlite_master WHERE type='table' AND name='localWalletSessions'")) {
+        const local = this.store.one<{ instance: string; realm: string; subject: string }>(
+          'SELECT instance,realm,subject FROM localWalletSessions WHERE credential=?',
+          hash(token),
+        )
+        if (local) {
+          this.store.run(
+            'INSERT INTO localWalletSessions VALUES(?,?,?,?)',
+            hash(session.token),
+            local.instance,
+            local.realm,
+            local.subject,
+          )
+        }
+      }
+      return session
     })
   }
   revoke(token: string) {

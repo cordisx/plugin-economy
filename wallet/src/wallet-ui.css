@@ -1,0 +1,111 @@
+.wallet-ui {
+  max-width: 52rem;
+  margin-inline: auto;
+  padding: 1rem 1.5rem 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  color: inherit;
+}
+.wallet-ui__balance {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding-block: 1rem;
+}
+.wallet-ui__balance-number {
+  font-size: clamp(2.5rem, 6vw, 3.75rem);
+  font-weight: 650;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+.wallet-ui__balance-number .economy-token-amount__icon {
+  width: 0.7em;
+  height: 0.7em;
+}
+.wallet-ui__help {
+  max-width: 20rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.wallet-ui__section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+}
+.wallet-ui__heading {
+  margin: 0;
+  font: inherit;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+.wallet-ui__activity {
+  margin-top: 0.8rem;
+}
+.wallet-ui__entry {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding-block: 1rem;
+  border-bottom: 1px solid color-mix(in srgb, currentColor 8%, transparent);
+}
+.wallet-ui__direction {
+  width: 2rem;
+  text-align: center;
+  font-size: 1.3rem;
+  opacity: 0.6;
+  flex-shrink: 0;
+}
+.wallet-ui__entry-description {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+  flex: 1;
+  overflow-wrap: anywhere;
+}
+.wallet-ui__entry-description strong {
+  font-weight: 550;
+}
+.wallet-ui__entry-description > :last-child,
+.wallet-ui__entry-amount > :last-child:not(:first-child) {
+  font-size: 0.8rem;
+}
+.wallet-ui__entry-amount {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.3rem;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+.wallet-ui__skeleton {
+  background: color-mix(in srgb, currentColor 8%, transparent);
+  border-radius: 0.4rem;
+}
+.wallet-ui__skeleton--balance {
+  width: 9rem;
+  height: 4rem;
+}
+.wallet-ui__skeleton--rows {
+  margin-top: 1rem;
+  height: 9rem;
+}
+@media (max-width: 480px) {
+  .wallet-ui {
+    padding-inline: 0.75rem;
+    gap: 1.5rem;
+  }
+  .wallet-ui__entry {
+    gap: 0.5rem;
+  }
+  .wallet-ui__direction {
+    width: 1.25rem;
+  }
+  .wallet-ui__entry-description > :last-child {
+    max-width: 14rem;
+  }
+}

@@ -1,6 +1,11 @@
 .git
 node_modules
 wallet
-.cache
+.cache/*
 data
 *.tgz
+
+!.cache/sdk
+.cache/sdk/*
+!.cache/sdk/cordisx-host-wallet-spend-r37-normal.tgz
+!.cache/sdk/cordisx-protocol-wallet-spend-r36-normal.tgz

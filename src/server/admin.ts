@@ -10,7 +10,10 @@ const [command, instance, ...args] = process.argv.slice(2)
 try {
   switch (command) {
     case 'instance':
-      economy.auth.createInstance(instance, Number(args[0]))
+      if (Number(args[0]) !== 0) {
+        throw new Error('Genesis coin issuance retired; only actual Host usage can issue coins')
+      }
+      economy.auth.createInstance(instance, 0)
       break
     case 'account':
       economy.auth.createAccount(instance, args[0])
@@ -22,19 +25,8 @@ try {
       console.log(JSON.stringify(economy.auth.createService(instance, args[0], args[1], Number(args[2]))))
       break
     case 'source':
-      economy.commerce.createSource(
-        instance,
-        args[0],
-        args[1],
-        args[2] as 'reward' | 'migration',
-        Number(args[3]),
-        Number(args[4]),
-        Number(args[5]),
-      )
-      break
     case 'entitlement':
-      economy.commerce.entitlement(instance, args[0], args[1], args[2], Number(args[3]))
-      break
+      throw new Error('Historical reward/migration issuance retired; existing records are preserved')
     case 'item':
       economy.commerce.createItem(instance, args[0], args[1], Number(args[2]), args[3])
       break
@@ -49,13 +41,19 @@ try {
       console.log(`Imported ${items.length} items`)
       break
     }
+    case 'prepare-empty-scope-correction': {
+      const plan = JSON.parse(readFileSync(args[0], 'utf8'))
+      if (plan.instanceId !== instance) throw new Error('Correction instance must match the explicit admin command')
+      console.log(JSON.stringify(economy.workIncome.corrections.prepare(plan)))
+      break
+    }
     case 'audit':
       economy.store.assertConservation(instance)
       console.log('Supply conserved')
       break
     default:
       throw new Error(
-        'Commands: instance ID SUPPLY | account INSTANCE ACCOUNT | login-code INSTANCE ACCOUNT | service INSTANCE SERVICE GAME_OR_* MAX_STAKE | source INSTANCE SOURCE SERVICE reward|migration BUDGET DAILY ACCOUNT_DAILY | entitlement INSTANCE SOURCE ID ACCOUNT AMOUNT | item INSTANCE ITEM TITLE PRICE NAMESPACE | audit INSTANCE',
+        'Commands: prepare-empty-scope-correction INSTANCE PLAN_JSON | instance ID 0 | account INSTANCE ACCOUNT | login-code INSTANCE ACCOUNT | service INSTANCE SERVICE GAME_OR_* MAX_STAKE | item INSTANCE ITEM TITLE PRICE NAMESPACE | audit INSTANCE',
       )
   }
 } finally {

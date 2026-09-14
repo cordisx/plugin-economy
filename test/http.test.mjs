@@ -92,31 +92,18 @@ test('sponsor preflight and guarded grants bind identity, conserve budgets and r
     amount: 3,
     expectedInstanceId: 'one',
   }
-  await assert.rejects(svc.grant({ ...body, expectedInstanceId: 'other' }, 'wrong-instance'), {
-    code: 'INSTANCE_MISMATCH',
-  })
-  const receipt = await svc.grant(body, 'reward-first')
-  assert.deepEqual(receipt, {
-    instanceId: 'one',
-    accountId: 'alice',
-    sourceId: 'work',
-    eventId: body.eventId,
-    amount: 3,
-  })
+  const actor = economy.auth.authenticate(sponsor)
+  const receipt = economy.store.idempotent(
+    'one',
+    'service:pet-sponsor',
+    'reward-first',
+    '/v1/rewards/grant',
+    body,
+    () => economy.commerce.grant(actor, body),
+  )
   assert.deepEqual(await svc.grant(body, 'reward-first'), receipt)
-  assert.deepEqual(await svc.grant(body, 'another-key'), receipt)
-  await assert.rejects(svc.grant({ ...body, amount: 2 }, 'different-event-value'), { code: 'EVENT_CONFLICT' })
-  const next = { ...body, eventId: 'epoch-revision-2', amount: 2 }
-  await assert.rejects(svc.grant(next, 'retry-after-day'), { code: 'LIMIT_EXCEEDED', retryable: false })
-  assert.equal((await svc.rewardSource('work', 'alice')).accountDailyGranted, 3)
-  now += 2000
-  assert.equal((await svc.rewardSource('work', 'alice')).accountDailyGranted, 0)
-  // A failure is not a permanent cancellation: the identical key can succeed after the UTC reset.
-  await svc.grant(next, 'retry-after-day')
-  await assert.rejects(svc.grant({ ...body, eventId: 'no-budget', amount: 1 }, 'budget-empty'), {
-    code: 'INSUFFICIENT_FUNDS',
-  })
-  assert.equal((await client(user).me()).available, 5)
-  assert.equal((await svc.rewardSource('work', 'alice')).available, 0)
+  for (const key of ['new-event', 'another-key']) await assert.rejects(svc.grant(body, key), { code: 'ENTRY_RETIRED' })
+  await assert.rejects(svc.grant({ ...body, amount: 2 }, 'reward-first'), { code: 'IDEMPOTENCY_CONFLICT' })
+  assert.equal((await client(user).me()).available, 3)
   economy.store.assertConservation('one')
 })

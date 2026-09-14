@@ -16,13 +16,20 @@ globalThis.__cordisxSharedReactRuntime = {
   ui: new Proxy({}, { get: () => component }),
 }
 
-const { apply, inject, manifest } = await import('../dist/runtime/module.js')
+const { apply, inject, manifest, Config } = await import('../dist/runtime/module.js')
 
 test('exports a minimal CordisX plugin module', () => {
-  assert.equal(manifest.schemaVersion, 1)
+  assert.equal(manifest.schemaVersion, 11)
   assert.equal(manifest.id, 'wallet')
-  assert.deepEqual(manifest.capabilities, [])
-  assert.deepEqual(inject, ['i18n', 'pages', 'routes', 'slots', 'managerContent'])
+  assert.deepEqual(manifest.capabilities, [
+    { name: 'usage.read', required: true, scope: { profile: 'current' } },
+    {
+      name: 'ui.extension-points.render',
+      required: true,
+      scope: { extensionPoints: ['manager.settings.navigation-items', 'manager.content'] },
+    },
+  ])
+  assert.deepEqual(inject, ['i18n', 'pages', 'routes', 'slots', 'managerContent', 'documents', 'http', 'usage'])
   assert.equal(typeof apply, 'function')
 })
 
@@ -34,7 +41,15 @@ test('formal artifact retains lazy modules and stylesheet with matching digests'
   assert.equal(artifact.entry, './module.js')
   assert.equal(artifact.initialStyles.length, 0)
   assert(artifact.files.some(file => file.kind === 'stylesheet'))
-  assert(artifact.files.find(file => file.path === './module.js').dynamicImports.length > 0)
+  const reachable = new Set(), pending = [artifact.entry]
+  while (pending.length) {
+    const path = pending.pop()
+    if (reachable.has(path)) continue
+    reachable.add(path)
+    const file = artifact.files.find(file => file.path === path)
+    if (file?.kind === 'module') pending.push(...file.imports)
+  }
+  assert(artifact.files.some(file => reachable.has(file.path) && file.dynamicImports?.length > 0))
   for (const file of artifact.files) {
     const bytes = await readFile(new URL(`../dist/runtime/${file.path}`, import.meta.url))
     assert.equal(bytes.length, file.byteLength)
@@ -48,6 +63,13 @@ test('activation registers valid localized routes and releases owned session', (
     get: name => {
       assert.equal(name, 'http')
       return undefined
+    },
+    provide: (name, service) => {
+      assert.equal(
+        service.contract,
+        name === 'economyLocalWallet' ? 'economy.local-wallet/v1' : 'economy.local-wallet-commerce/v1',
+      )
+      assert(['economyLocalWallet', 'economyWalletCommerce'].includes(name))
     },
     effect: factory => {
       disposers.push(factory())
@@ -63,7 +85,18 @@ test('activation registers valid localized routes and releases owned session', (
     managerContent: { register: () => registrations.push('manager') },
     slots: { register: () => registrations.push('navigation') },
   })
-  assert.deepEqual(registrations, ['en', 'zh-CN', 'overview', '/manager/extensions/wallet', 'manager', 'navigation'])
+  assert.deepEqual(registrations, [
+    'en',
+    'zh-CN',
+    'overview',
+    '/manager/extensions/wallet',
+    'activity',
+    '/manager/extensions/wallet/activity',
+    'diagnostics',
+    '/manager/extensions/wallet/diagnostics',
+    'manager',
+    'navigation',
+  ])
   disposers.forEach(dispose => dispose())
 })
 
@@ -72,7 +105,20 @@ test('Host and wallet resolve one public Protocol module identity', async () => 
   const { realpathSync } = await import('node:fs')
   const walletRequire = createRequire(import.meta.url)
   const hostRequire = createRequire(walletRequire.resolve('cordisx/contracts'))
-  for (const contract of ['@cordisx/protocol/plugin-http/v1', '@cordisx/protocol/agent-avatar/v1']) {
+  for (
+    const contract of [
+      '@cordisx/protocol/plugin-http/v1',
+      '@cordisx/protocol/agent-avatar/v1',
+      '@cordisx/protocol/plugin-http/v3',
+      '@cordisx/protocol/managed-source/v1',
+    ]
+  ) {
     assert.equal(realpathSync(hostRequire.resolve(contract)), realpathSync(walletRequire.resolve(contract)))
   }
+})
+
+test('ordinary configuration exposes no historical correction or new issuance declaration', () => {
+  assert.equal(Config({}).readOnly, false)
+  assert.equal(Config({}).legacyPetHistoryCorrection, undefined)
+  assert.equal(Config({}).legacyPetHistory, undefined)
 })

@@ -15,6 +15,14 @@
     "./server": {
       "types": "./dist/server/index.d.ts",
       "import": "./dist/server/index.js"
+    },
+    "./local": {
+      "types": "./dist/local/index.d.ts",
+      "import": "./dist/local/index.js"
+    },
+    "./spend": {
+      "types": "./dist/spend/index.d.ts",
+      "import": "./dist/spend/index.js"
     }
   },
   "scripts": {
@@ -38,7 +46,9 @@
     "dprint": "0.57.1",
     "eslint": "9.39.4",
     "stylelint": "17.15.0",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "@cordisx/protocol": "file:./.cache/sdk/cordisx-protocol-wallet-spend-r36-normal.tgz",
+    "cordisx": "file:./.cache/sdk/cordisx-host-wallet-spend-r37-normal.tgz"
   },
   "files": [
     "dist",
@@ -46,5 +56,17 @@
     "README.zh-Hans.md",
     "LICENSE",
     "docs"
-  ]
+  ],
+  "overrides": {
+    "@cordisx/protocol": "$@cordisx/protocol"
+  },
+  "peerDependencies": {
+    "@cordisx/protocol": "0.1.0-alpha.0",
+    "cordisx": "0.1.0-beta.2"
+  },
+  "peerDependenciesMeta": {
+    "cordisx": {
+      "optional": true
+    }
+  }
 }

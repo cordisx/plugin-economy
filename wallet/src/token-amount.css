@@ -1,0 +1,38 @@
+.economy-token-amount {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25em;
+  vertical-align: middle;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.economy-token-amount__icon {
+  position: relative;
+  display: inline-block;
+  flex: none;
+  width: 1.125rem;
+  height: 1.125rem;
+  overflow: hidden;
+}
+.economy-token-amount__icon img {
+  position: absolute;
+  left: -11.8%;
+  top: -10.8%;
+  display: block;
+  width: 123.5%;
+  height: 123.5%;
+  max-width: none;
+}
+.economy-token-amount--balance .economy-token-amount__icon {
+  width: 1.75rem;
+  height: 1.75rem;
+}
+.economy-token-amount__unit {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

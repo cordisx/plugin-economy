@@ -138,3 +138,15 @@ while the Mac remained locked.
 - No Sites runtime with a durable SQLite volume was demonstrated. There is no
   Sites deployment or static-site substitute for the authoritative service.
 - No merge, deployment, formal compatible set or user acceptance is implied.
+
+## Terminal local spending source — 2026-09-14
+
+The normal installed Host package SHA256 is `d2bcd11fe0eb18d20bcd57947186758718e0a302a49710dad01d2f960b2e10d1`; the single Protocol companion is `aa237fb06d4fddbcef7da9b367c7c53634e71f4a9aa42a977dff43e63217cc85`. These are experimental source packages, not merged dependencies. Root and Wallet use normal file-package installation and explicit companion overrides.
+
+Temporary SQLite tests exercise original-wallet alias and key continuity, multiple remote sources, signed bounded principal capture/refund, stable request and restart recovery, immutable decision conflict, forged signatures/fields, private quote and final authorization fences, and transactional storage failures. New production negative tests prove retired HTTP financial entry points cannot create grants, migration claims, game settlement or bearer purchases. Historical arithmetic runs only through explicit test fixtures for preserved old records. The existing actual Host usage income suite remains intact.
+
+Normal public `cordisx/wallet-spend-provider/v1` integration uses a real temporary Unix socket and the same SQLite authority. It verifies purchase/cancellation mutual exclusion, reconnection receipt recovery, foreign quote and invalid MAC rejection, and connection deadline closure without writes. No private SDK entrypoint is imported in production or tests. Wallet facade tests verify cancellation intent/hash, deadline/signal forwarding, unknown outcomes, read-only gating and generation fencing. Native dialogs and live signer installation remain Host/runtime-owner verification boundaries.
+
+No actual DB, Registry, Keychain, signer or running service was changed for this source candidate. The Dockerfile includes the pinned SDK inputs and runtime dependencies; container execution remains unverified.
+
+Final source checks: Economy `npm run check` passes 97 tests with zero failures/skips; Wallet `check` passes 53 tests (44 compiled-runtime plus 9 session tests). Public provider IPC tests are included in the root count. The SDK graph checker runs with `node --conditions=types scripts/verify-sdk-graph.mjs` and verifies real type module paths plus lock SHA-512 against the exact normal artifacts; actual Node provider import executes in the IPC suite. Development dry-run reports ready.

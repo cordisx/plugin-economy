@@ -204,6 +204,18 @@ export class Commerce {
       )
       return receipt
     }
+    if (/^pet-work:/.test(body.eventId)) {
+      requireCondition(
+        !this.store.one(
+          'SELECT 1 FROM workIncomeTakeovers WHERE instance=? AND account=?',
+          actor.instanceId,
+          body.accountId,
+        ),
+        'LEGACY_WORK_CHANNEL_CLOSED',
+        'Pet work income is now owned by the canonical economy issuer',
+        409,
+      )
+    }
     const day = source.resetsAt / 86_400_000 - 1
     requireCondition(
       source.dailyGranted + body.amount <= source.dailyLimit
