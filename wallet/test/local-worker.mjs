@@ -653,3 +653,98 @@ test('read-only startup refuses wallet initialization and missing local enrollme
   assert.deepEqual(f.records, records)
   assert.equal(f.e.store.one('SELECT COUNT(*) AS n FROM workIncomeReceipts').n, 1)
 })
+
+test('expired canonical read can recover existing local authority and income retirement readiness without restarting owner', async t => {
+  const f = fixture(t, true, true), s = f.owner()
+  await s.connect(origin)
+  await drain()
+  const originalWallet = (await s.service.summary()).wallet
+  const originalRecord = structuredClone(f.records.get('economy-local-wallet-v1').value)
+  const originalClient = s.client, nativeOpens = f.nativeOpens(), baselineSubmits = f.submitted.length
+  const actualRead = f.http.request, actualOpen = f.http.connectLocalAccount
+  let expiredConnection, refuse = true, localOpens = 0, rejectedReads = 0, posts = 0
+  f.http.request = async input => {
+    if (input.method === 'POST') posts++
+    if (!expiredConnection) expiredConnection = input.connection.id
+    if (input.connection.id === expiredConnection) {
+      rejectedReads++
+      return {
+        status: 'accepted',
+        value: {
+          statusCode: 401,
+          body: JSON.stringify({
+            error: {
+              code: 'UNAUTHORIZED',
+              message: 'Credential expired, revoked, or unknown',
+            },
+          }),
+        },
+      }
+    }
+    return actualRead(input)
+  }
+  f.http.connectLocalAccount = async input => {
+    localOpens++
+    return refuse ? { status: 'unavailable', code: 'permission-denied' } : actualOpen(input)
+  }
+  f.change(10000)
+  await drain()
+  assert.equal(s.service.incomeStatus().status, 'unavailable')
+  assert.equal(s.service.incomeStatus().stage, 'retirement')
+  assert.equal(f.submitted.length, baselineSubmits)
+  assert.equal(s.client, originalClient) // error stage is recoverable, not owner disposal
+  refuse = false
+  assert.equal((await s.service.summary()).status, 'ready')
+  f.change(20000)
+  await drain()
+  assert.equal(s.service.incomeStatus().status, 'ready')
+  assert.equal(s.service.incomeStatus().stage, 'settlement')
+  assert.deepEqual((await s.service.summary()).wallet, originalWallet)
+  assert.deepEqual(f.records.get('economy-local-wallet-v1').value, originalRecord)
+  assert.equal(f.nativeOpens(), nativeOpens)
+  assert.equal(posts, 0) // read recovery does not replay a money or income POST
+  assert.equal(localOpens, 2) // refused attempt, then single successful existing-local reopen
+  assert.equal(rejectedReads, 2)
+})
+
+test('real backend local delegation revocation cannot be silently restored by expired-read recovery', async t => {
+  const { LocalWalletIdentities } = await import('../../dist/server/local-wallet-identities.js')
+  const f = fixture(t, true, true), s = f.owner()
+  await s.connect(origin)
+  await drain()
+  const originalRead = f.http.request, originalOpen = f.http.connectLocalAccount
+  let opens = 0, nativeOpens = f.nativeOpens(), posts = 0
+  f.http.connectLocalAccount = async input => {
+    opens++
+    return originalOpen(input)
+  }
+  f.http.request = async input => {
+    if (input.method === 'POST') posts++
+    try {
+      return await originalRead(input)
+    } catch (error) {
+      return {
+        status: 'accepted',
+        value: {
+          statusCode: error.status ?? 500,
+          body: JSON.stringify({
+            error: {
+              code: error.code,
+              message: error.message,
+            },
+          }),
+        },
+      }
+    }
+  }
+  // Isolated in-memory fixture only: invoke the actual trusted revocation operation, never actual runtime storage.
+  const identity = f.e.store.one(
+    'SELECT realm,subject,keyFingerprint FROM localWalletIdentities WHERE instance=?',
+    'local',
+  )
+  new LocalWalletIdentities(f.e.store, 'local', identity.realm).revoke(identity)
+  await assert.rejects(s.service.summary(), { status: 403, code: 'INVALID_SIGNATURE' })
+  assert.equal(opens, 1)
+  assert.equal(f.nativeOpens(), nativeOpens)
+  assert.equal(posts, 0)
+})
