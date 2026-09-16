@@ -51,8 +51,8 @@
     "eslint": "9.39.4",
     "stylelint": "17.15.0",
     "typescript": "5.9.3",
-    "@cordisx/protocol": "file:./.cache/sdk/cordisx-protocol-wallet-spend-r36-normal.tgz",
-    "cordisx": "file:./.cache/sdk/cordisx-host-wallet-spend-r37-normal.tgz"
+    "@cordisx/protocol": "file:./sdk/release/cordisx-protocol-0.1.0-beta.3.tgz",
+    "cordisx": "file:./sdk/release/cordisx-0.1.0-beta.3.tgz"
   },
   "files": [
     "dist",
@@ -65,8 +65,8 @@
     "@cordisx/protocol": "$@cordisx/protocol"
   },
   "peerDependencies": {
-    "@cordisx/protocol": "0.1.0-alpha.0",
-    "cordisx": "0.1.0-beta.2"
+    "@cordisx/protocol": "0.1.0-beta.3",
+    "cordisx": "0.1.0-beta.3"
   },
   "peerDependenciesMeta": {
     "cordisx": {

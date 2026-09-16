@@ -31,10 +31,10 @@
     "lint": "npm --prefix .. run lint"
   },
   "devDependencies": {
-    "@cordisx/economy": "file:../.cache/sdk/cordisx-economy-terminal-r38-final-normal.tgz",
-    "@cordisx/protocol": "file:../.cache/sdk/cordisx-protocol-wallet-spend-r36-normal.tgz",
+    "@cordisx/economy": "file:../.cache/sdk/cordisx-economy-0.1.0.tgz",
+    "@cordisx/protocol": "file:../sdk/release/cordisx-protocol-0.1.0-beta.3.tgz",
     "@deepseek-ai/cordis": "4.0.1",
-    "cordisx": "file:../.cache/sdk/cordisx-host-wallet-spend-r37-normal.tgz",
+    "cordisx": "file:../sdk/release/cordisx-0.1.0-beta.3.tgz",
     "typescript": "^5.9.2",
     "vite": "8.2.2"
   },

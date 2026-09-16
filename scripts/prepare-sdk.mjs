@@ -1,21 +1,25 @@
-/** Validate the owner-frozen normal SDK inputs. Never rebuild a stale Host checkpoint or patch compiled SDK files. */
+import { execFileSync } from 'node:child_process'
+/** Verify the exact, owner-built SDK artifacts used by clean consumer installs. */
 import { createHash } from 'node:crypto'
-import { readFileSync } from 'node:fs'
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-const root = fileURLToPath(new URL('..', import.meta.url)), directory = join(root, '.cache/sdk')
-const inventory = JSON.parse(readFileSync(join(directory, 'normal-sdk-inputs.json'), 'utf8'))
-if (inventory.stage !== 'terminal-r37' || inventory.packages.length !== 2) {
-  throw new Error('Expected terminal owner SDK inventory')
+const root = fileURLToPath(new URL('..', import.meta.url)), directory = join(root, 'sdk/release')
+const inventory = JSON.parse(readFileSync(join(directory, 'sdk-evidence.json'), 'utf8'))
+if (!/^[a-f0-9]{40}$/.test(inventory.hostCommit) || inventory.packages.length !== 2) {
+  throw new Error('Expected exact owner SDK inventory')
 }
 for (const pkg of inventory.packages) {
-  if (!/^cordisx-(host|protocol)-wallet-spend-r3[67]-normal\.tgz$/.test(pkg.filename)) {
-    throw new Error('Unexpected SDK package')
-  }
   const bytes = readFileSync(join(directory, pkg.filename))
   if (
     createHash('sha256').update(bytes).digest('hex') !== pkg.sha256
     || 'sha512-' + createHash('sha512').update(bytes).digest('base64') !== pkg.integrity
   ) throw new Error('SDK digest mismatch: ' + pkg.filename)
 }
-console.info('Normal Host/Protocol SDK inputs verified; experimental source packages, no runtime installation implied.')
+mkdirSync(join(root, '.cache/sdk'), { recursive: true })
+writeFileSync(join(root, '.cache/sdk/sdk-evidence.json'), JSON.stringify(inventory, null, 2) + '\n')
+console.info('Owner-built Host/Protocol SDK digests verified.')
+execFileSync('npm', ['pack', '--ignore-scripts', '--pack-destination', join(root, '.cache/sdk')], {
+  cwd: root,
+  stdio: 'inherit',
+})

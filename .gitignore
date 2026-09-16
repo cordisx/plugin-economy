@@ -5,3 +5,5 @@ dist/
 !.env.example
 *.tgz
 .cache/
+
+!sdk/release/*.tgz
