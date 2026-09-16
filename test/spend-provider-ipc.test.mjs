@@ -9,7 +9,7 @@ import test from 'node:test'
 import { Economy } from '../dist/server/economy.js'
 import { LocalWalletIdentities } from '../dist/server/local-wallet-identities.js'
 import { createSpendProviderFactory } from '../dist/server/spend-provider-factory.js'
-import { spendHash } from '../dist/server/spend-signatures.js'
+import { signed, spendHash } from '../dist/server/spend-signatures.js'
 import { canonical } from '../dist/spend/index.js'
 // Test-only transport fixture for Host's authenticated wire. Production consumes only the public listener.
 function peer(path, secret) {
@@ -129,4 +129,59 @@ test('authenticated connection scope rejects foreign quote and bad MAC; expired 
   expired.close()
   assert.equal(f.e.store.one('SELECT COUNT(*) AS n FROM localPurchaseRequests').n, 0)
   assert.equal(f.e.store.one('SELECT available FROM accounts WHERE id=?', 'original').available, 50)
+})
+
+test('public Host IPC reserves the original economy wallet and recovers a signed pool refund after reconnect', async t => {
+  const f = await fixture(t), p = await f.connect(), service = generateKeyPairSync('ed25519')
+  const source = {
+    serviceOrigin: 'https://games.example',
+    serverId: 'game-service',
+    servicePublicKey: service.publicKey.export({ type: 'spki', format: 'der' }).toString('base64url'),
+  }
+  const identity = await p.request('identity', {})
+  const challenge = signed({
+    contract: 'economy.spend-wallet-challenge/v1',
+    ...source,
+    gameAccountId: 'player',
+    nonce: 'a'.repeat(64),
+    expiresAt: Date.now() + 60000,
+  }, service.privateKey)
+  const bind = await p.request('quote-binding', { challenge: canonical(challenge) })
+  await p.request('bind', { token: bind.token })
+  const terms = signed({
+    contract: 'economy.pool-terms/v1',
+    ...source,
+    matchId: 'ipc-match',
+    game: { id: 'gomoku', version: '1.7.0', digest: 'b'.repeat(64), reviewStatus: 'unreviewed' },
+    participants: [{ gameAccountId: 'player', ...identity, amount: 20 }],
+    policy: 'winner-weights',
+    rounds: 3,
+    acceptBefore: Date.now() + 60000,
+  }, service.privateKey)
+  const q = await p.request('pool-quote', { terms: canonical(terms), requestId: 'pool-ipc' })
+  const held = await p.request('pool-reserve', { token: q.token })
+  assert.equal(JSON.parse(held.reservation).payload.walletId, identity.walletId)
+  assert.equal(f.e.store.one('SELECT reserved FROM accounts WHERE id=?', 'original').reserved, 20)
+  p.close()
+  const next = await f.connect()
+  assert.deepEqual(await next.request('pool-lookup', { source, requestId: 'pool-ipc' }), held)
+  const decision = signed({
+    contract: 'economy.pool-decision/v1',
+    terms,
+    sequence: 1,
+    previousHash: null,
+    phase: 'refunded',
+    reservations: [JSON.parse(held.reservation)],
+    allocations: [{ walletId: identity.walletId, paid: 20, exited: true }],
+    remaining: 0,
+    resultHash: 'c'.repeat(64),
+  }, service.privateKey)
+  const settled = await next.request('pool-apply', { source, decision: canonical(decision) })
+  assert.equal(settled.exited, true)
+  assert.deepEqual(await next.request('pool-apply', { source, decision: canonical(decision) }), settled)
+  assert.deepEqual(f.e.store.one('SELECT available,reserved FROM accounts WHERE id=?', 'original'), {
+    available: 50,
+    reserved: 0,
+  })
+  next.close()
 })

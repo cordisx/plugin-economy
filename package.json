@@ -23,6 +23,10 @@
     "./spend": {
       "types": "./dist/spend/index.d.ts",
       "import": "./dist/spend/index.js"
+    },
+    "./pool": {
+      "types": "./dist/pool/index.d.ts",
+      "import": "./dist/pool/index.js"
     }
   },
   "scripts": {

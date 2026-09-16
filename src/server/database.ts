@@ -16,9 +16,12 @@ export class Store {
   constructor(path: string) {
     this.db = new DatabaseSync(path)
     const version = (this.db.prepare('PRAGMA user_version').get() as { user_version: number }).user_version
-    requireCondition(version <= 2, 'SCHEMA_TOO_NEW', 'Database was created by a newer economy service', 500)
+    requireCondition(version <= 3, 'SCHEMA_TOO_NEW', 'Database was created by a newer economy service', 500)
     this.db.exec(`PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA foreign_keys=ON; PRAGMA busy_timeout=5000;
       CREATE TABLE IF NOT EXISTS instances(id TEXT PRIMARY KEY, supply INTEGER NOT NULL CHECK(supply>=0));
+      CREATE TABLE IF NOT EXISTS poolClearing(instance TEXT NOT NULL REFERENCES instances(id),transactionId TEXT NOT NULL,account TEXT NOT NULL,net INTEGER NOT NULL,decision TEXT NOT NULL,PRIMARY KEY(instance,transactionId));
+      CREATE TRIGGER IF NOT EXISTS pool_clearing_no_update BEFORE UPDATE ON poolClearing BEGIN SELECT RAISE(ABORT,'append-only pool clearing'); END;
+      CREATE TRIGGER IF NOT EXISTS pool_clearing_no_delete BEFORE DELETE ON poolClearing BEGIN SELECT RAISE(ABORT,'append-only pool clearing'); END;
       CREATE TABLE IF NOT EXISTS accounts(instance TEXT NOT NULL REFERENCES instances(id), id TEXT NOT NULL, kind TEXT NOT NULL,
         available INTEGER NOT NULL DEFAULT 0 CHECK(available>=0), reserved INTEGER NOT NULL DEFAULT 0 CHECK(reserved>=0), PRIMARY KEY(instance,id));
       CREATE TABLE IF NOT EXISTS credentials(hash TEXT PRIMARY KEY, instance TEXT NOT NULL, subject TEXT NOT NULL,
@@ -46,7 +49,7 @@ export class Store {
       if (
         !this.all<{ name: string }>('PRAGMA table_info(orders)').some(column => column.name === 'fulfillmentTarget')
       ) this.db.exec('ALTER TABLE orders ADD COLUMN fulfillmentTarget TEXT')
-      this.db.exec('PRAGMA user_version=2')
+      this.db.exec('PRAGMA user_version=3')
     })
   }
   one<T>(sql: string, ...args: SQLInputValue[]): T | undefined {
@@ -150,7 +153,7 @@ export class Store {
   }
   assertConservation(instance: string) {
     const row = this.one<{ supply: number; total: number }>(
-      'SELECT supply,(SELECT COALESCE(SUM(available+reserved),0) FROM accounts WHERE instance=?) AS total FROM instances WHERE id=?',
+      'SELECT supply+(SELECT COALESCE(SUM(net),0) FROM poolClearing WHERE instance=instances.id) AS supply,(SELECT COALESCE(SUM(available+reserved),0) FROM accounts WHERE instance=?) AS total FROM instances WHERE id=?',
       instance,
       instance,
     )

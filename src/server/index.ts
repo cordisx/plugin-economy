@@ -13,3 +13,5 @@ export { type LocalPurchaseInput, type LocalPurchaseQuote, openLocalCommerceSess
 export { legacyReceipt, type LegacyReceiptQuery } from './legacy-receipts.js'
 
 export { createSpendProviderFactory, loadSpendReceiptKey } from './spend-provider-factory.js'
+
+export { LocalPoolEngine } from './local-pool.js'

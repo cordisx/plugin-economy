@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto'
 import { closeSync, constants, fstatSync, openSync, readFileSync } from 'node:fs'
 import type { Store } from './database.js'
 import { requireCondition, textId } from './errors.js'
+import { LocalPoolEngine } from './local-pool.js'
 import { LocalSpendEngine } from './local-spend.js'
 import { LocalWalletIdentities } from './local-wallet-identities.js'
 import { openSpendProviderSession, type SpendProviderWallet } from './spend-provider.js'
@@ -53,6 +54,7 @@ export function createSpendProviderFactory(
       'Existing original local delegation required',
       403,
     )
-    return openSpendProviderSession(new LocalSpendEngine(store, config.instanceId, wallet.accountId, key), wallet, live)
+    const engine = new LocalSpendEngine(store, config.instanceId, wallet.accountId, key)
+    return openSpendProviderSession(engine, wallet, live, new LocalPoolEngine(engine, key))
   }
 }

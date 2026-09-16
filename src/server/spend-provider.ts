@@ -1,9 +1,11 @@
 import { createHash } from 'node:crypto'
+import type { PoolQuote } from '../pool/contracts.js'
 import { canonical } from '../spend/codec.js'
 import type { SpendStatus } from '../spend/contracts.js'
 import { requireCondition } from './errors.js'
 import { legacyReceipt, type LegacyReceiptQuery } from './legacy-receipts.js'
 import { openLocalCommerceSession } from './local-commerce.js'
+import { LocalPoolEngine } from './local-pool.js'
 import { type BindingQuote, LocalSpendEngine, type SpendQuote } from './local-spend.js'
 import { LocalWalletIdentities } from './local-wallet-identities.js'
 import { checkedDecision, checkedTerms, spendHash } from './spend-signatures.js'
@@ -24,7 +26,12 @@ const record = (value: SpendStatus): SpendProviderRecord => ({
 const sourceMatches = (a: SpendProviderSource, b: SpendProviderSource) =>
   a.serviceOrigin === b.serviceOrigin && a.servicePublicKey === b.servicePublicKey && a.serverId === b.serverId
 /** Consumed only by the authenticated Host Node UDS server adapter. No listener, signer or authority registry is provided to renderer plugins. */
-export function openSpendProviderSession(engine: LocalSpendEngine, wallet: SpendProviderWallet, live: () => boolean) {
+export function openSpendProviderSession(
+  engine: LocalSpendEngine,
+  wallet: SpendProviderWallet,
+  live: () => boolean,
+  poolEngine?: LocalPoolEngine,
+) {
   requireCondition(
     wallet.instanceId === engine.instanceId && wallet.accountId === engine.accountId,
     'WALLET_MISMATCH',
@@ -52,8 +59,37 @@ export function openSpendProviderSession(engine: LocalSpendEngine, wallet: Spend
   current()
   const session = engine.openSession(current)
   const commerce = openLocalCommerceSession(engine, current)
+  const pool = poolEngine?.openSession(current)
+  const poolRecord = (r: import('../pool/contracts.js').PoolStatus) => ({ ...r, reservation: canonical(r.reservation) })
   return Object.freeze({
     ...commerce,
+    ...(pool && poolEngine
+      ? {
+        pool: {
+          quote: (terms: string, requestId: string) => {
+            const handle = pool.quote(JSON.parse(terms), requestId)
+            return { handle, terms: canonical(JSON.parse(terms)) }
+          },
+          reserve: (handle: object) => poolRecord(pool.reserve(handle as PoolQuote)),
+          lookup: (source: SpendProviderSource, requestId: string) => {
+            current()
+            const r = poolEngine.lookup(source, requestId)
+            return r ? poolRecord(r) : null
+          },
+          applyDecision: (source: SpendProviderSource, input: string) => {
+            current()
+            const decision = JSON.parse(input)
+            requireCondition(
+              sourceMatches(source, decision.payload.terms.payload),
+              'SOURCE_MISMATCH',
+              'Original pool source required',
+              403,
+            )
+            return poolRecord(poolEngine.applyDecision(decision, current))
+          },
+        },
+      }
+      : {}),
     legacyReceipt: (query: LegacyReceiptQuery) => {
       current()
       return legacyReceipt(engine, query)
@@ -93,6 +129,7 @@ export function openSpendProviderSession(engine: LocalSpendEngine, wallet: Spend
     close: () => {
       active = false
       session.close()
+      pool?.close()
     },
   })
 }
