@@ -1,0 +1,26 @@
+{
+  "$schema": "https://raw.githubusercontent.com/cordisx/cordisx-protocol/main/schemas/plugin-manifest.v11.schema.json",
+  "schemaVersion": 11,
+  "services": [],
+  "id": "wallet",
+  "name": "Wallet",
+  "capabilities": [
+    {
+      "name": "usage.read",
+      "required": true,
+      "scope": {
+        "profile": "current"
+      }
+    },
+    {
+      "name": "ui.extension-points.render",
+      "required": true,
+      "scope": {
+        "extensionPoints": [
+          "manager.settings.navigation-items",
+          "manager.content"
+        ]
+      }
+    }
+  ]
+}

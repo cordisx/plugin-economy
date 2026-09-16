@@ -1,0 +1,67 @@
+name: Check
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+concurrency:
+  group: check-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  service:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.14.1
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run check
+      - run: npm pack --ignore-scripts
+      - uses: actions/upload-artifact@v4
+        with:
+          name: economy-package
+          path: '*.tgz'
+  wallet:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.14.1
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run build
+      - run: node scripts/prepare-sdk.mjs
+      - run: npm --prefix wallet ci
+      - run: npm --prefix wallet ls @cordisx/protocol @cordisx/channel @cordisx/plugin-cli-proxy-api --all --json > .cache/sdk/wallet-sdk-dependency-tree.json
+      - run: npm --prefix wallet run check
+      - run: npm --prefix wallet run dev:dry-run
+      - name: Record SDK package evidence
+        if: always()
+        run: |
+          for sdk_archive in .cache/sdk/*.tgz; do
+            [ -f "$sdk_archive" ] || continue
+            sha256sum "$sdk_archive" > "$sdk_archive.sha256"
+            sha512sum "$sdk_archive" > "$sdk_archive.sha512"
+            tar -tzf "$sdk_archive" > "$sdk_archive.contents.txt"
+          done
+      - name: Upload SDK package evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sdk-package-evidence
+          include-hidden-files: true
+          retention-days: 7
+          path: |
+            .cache/sdk/*.tgz
+            .cache/sdk/*.tgz.sha256
+            .cache/sdk/*.tgz.sha512
+            .cache/sdk/*.tgz.contents.txt
+            .cache/sdk/sdk-evidence.json
+            .cache/sdk/wallet-sdk-dependency-tree.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wallet-artifact
+          path: wallet/dist

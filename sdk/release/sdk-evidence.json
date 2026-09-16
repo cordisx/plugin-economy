@@ -1,0 +1,39 @@
+{
+  "hostCommit": "6d241082ac18c59de2983bdbb32c7c79e4a98168",
+  "node": "v24.14.1",
+  "npm": "11.11.0",
+  "sources": [
+    {
+      "location": "node_modules/@cordisx/eslint-config",
+      "spec": "git+ssh://git@github.com/cordisx/cordisxmono.git#c63c2e8c2ba7e11502934a52ad2ce3734e804cdc"
+    },
+    {
+      "location": "node_modules/@cordisx/protocol",
+      "spec": "git+ssh://git@github.com/cordisx/cordisx-protocol.git#55621cd211d48783eb0f729f2925b54bd621a810"
+    },
+    {
+      "location": "packages/cli/dist/bundled-plugins/@cordisx/channel",
+      "spec": "github:cordisx/plugin-channel#d426ec0a7a907746bc62317269a0ec5b3379adf9"
+    },
+    {
+      "location": "packages/cli/dist/bundled-plugins/@cordisx/plugin-cli-proxy-api",
+      "spec": "github:cordisx/plugin-cli-proxy-api#c28d6274d50b3d8d3dc8e70a9a5b196cf4817c37"
+    },
+    {
+      "location": "node_modules/@cordisx/protocol",
+      "spec": "github:cordisx/cordisx-protocol#55621cd211d48783eb0f729f2925b54bd621a810"
+    }
+  ],
+  "packages": [
+    {
+      "filename": "cordisx-0.1.0-beta.3.tgz",
+      "sha256": "90526bb004801c52df6fd409d007534c2376266ff1c96ed7a337d01b19140fe4",
+      "integrity": "sha512-WgCK8wrC4sCVcH24xlKc4OBTCSRDkQDVas29I0Tj1K8NLLxecsSW3HEUeDPBUFVqzZyi2t02NlMUPIwUTJiuNQ=="
+    },
+    {
+      "filename": "cordisx-protocol-0.1.0-beta.3.tgz",
+      "sha256": "6bcae93bedd38ed1e7b8c41f9e4b1ea586b0302c60955309af67e3d4fe633641",
+      "integrity": "sha512-pBZAKfgka7IzMp1x5z2ewdEelmGHHxnjwlBM5gZ2kaWRWj8VOSKHyQigeBQ25e+euyo6MS/KkElp3aLVNNC7/g=="
+    }
+  ]
+}

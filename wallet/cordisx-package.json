@@ -1,0 +1,11 @@
+{
+  "$schema": "https://raw.githubusercontent.com/cordisx/cordisx-protocol/main/schemas/plugin-package.v11.schema.json",
+  "schemaVersion": 11,
+  "id": "wallet",
+  "runtimeManifest": {
+    "path": "./runtime-manifest.json",
+    "schema": "https://raw.githubusercontent.com/cordisx/cordisx-protocol/main/schemas/plugin-manifest.v11.schema.json",
+    "digest": "sha256:db4b25d4635f3b25e4c6e6b69cb41b7c9812d2d298495f8fc5feb02db3c38920"
+  },
+  "dependencies": []
+}
