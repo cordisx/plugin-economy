@@ -1,5 +1,5 @@
 {
-  "hostCommit": "0a863c2fe166b58964f881cc54424ab88f3c0b0e",
+  "hostCommit": "6d241082ac18c59de2983bdbb32c7c79e4a98168",
   "node": "v24.14.1",
   "npm": "11.11.0",
   "sources": [
@@ -27,8 +27,8 @@
   "packages": [
     {
       "filename": "cordisx-0.1.0-beta.3.tgz",
-      "sha256": "163c33f4e6a54f6d4c37d47a84f55aeb66e0e94eeb3602496108ef1b4bf72840",
-      "integrity": "sha512-IaAczfI8JEB8WV4eYnYpOv3vUr+OwUm/Z6MP8VPcq8OHj+oe737HQnYIPps2xZVsZykt7YoQPOXekPlxLvp7Sw=="
+      "sha256": "90526bb004801c52df6fd409d007534c2376266ff1c96ed7a337d01b19140fe4",
+      "integrity": "sha512-WgCK8wrC4sCVcH24xlKc4OBTCSRDkQDVas29I0Tj1K8NLLxecsSW3HEUeDPBUFVqzZyi2t02NlMUPIwUTJiuNQ=="
     },
     {
       "filename": "cordisx-protocol-0.1.0-beta.3.tgz",

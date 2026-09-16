@@ -44,15 +44,15 @@
   },
   "devDependencies": {
     "@cordisx/eslint-config": "github:cordisx/cordisxmono#32fa3b257cd5a7bfa0bb2d5f1012ca18665d1637",
+    "@cordisx/protocol": "file:sdk/release/cordisx-protocol-0.1.0-beta.3.tgz",
     "@projectwallace/stylelint-plugin": "0.7.0",
     "@types/node": "^24.0.0",
     "@typescript-eslint/parser": "8.69.0",
+    "cordisx": "file:sdk/release/cordisx-0.1.0-beta.3.tgz",
     "dprint": "0.57.1",
     "eslint": "9.39.4",
     "stylelint": "17.15.0",
-    "typescript": "5.9.3",
-    "@cordisx/protocol": "file:./sdk/release/cordisx-protocol-0.1.0-beta.3.tgz",
-    "cordisx": "file:./sdk/release/cordisx-0.1.0-beta.3.tgz"
+    "typescript": "5.9.3"
   },
   "files": [
     "dist",
