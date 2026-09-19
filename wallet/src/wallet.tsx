@@ -6,13 +6,20 @@ import {
   CORDISX_PAGE_SCHEMA_V3,
   CORDISX_PLUGIN_MANIFEST_SCHEMA_V11,
   CORDISX_ROUTE_SCHEMA_V2,
+  type CordisXPluginBrandIcon,
   type CordisXPluginManifestV11,
   type CordisXReactPageProps,
 } from 'cordisx/contracts'
 import { defineReactPage, lazy, Suspense } from 'cordisx/react'
+import economyIconUrl from './assets/economy.png?inline'
 import { createWalletCommerceFacade, type HostCommercePort } from './commerce-facade.js'
 import { CanonicalWalletSession, LOCAL_WALLET_SERVICE, type LocalWalletConfig } from './local-wallet.js'
 import { en, type Messages, zh } from './messages.js'
+
+export const icon = {
+  mediaType: 'image/png',
+  data: economyIconUrl.slice('data:image/png;base64,'.length),
+} as const satisfies CordisXPluginBrandIcon
 
 export const manifest = {
   $schema: CORDISX_PLUGIN_MANIFEST_SCHEMA_V11,
