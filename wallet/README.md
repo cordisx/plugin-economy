@@ -12,6 +12,14 @@ From the repository root, validate the frozen normal SDK inputs with `node scrip
 
 Vite uses `cordisXPluginViteConfig()` and preserves the complete runtime artifact, shared chunks, lazy page and lazy CSS. The package includes the full graph. Source development still uses `src/wallet.tsx`. The public React runtime remains external.
 
+The plugin-owned brand artwork is `src/assets/economy.png` (256×256). The public
+`icon` module export supplies its PNG bytes as `CordisXPluginBrandIcon` to the
+Host-owned plugin list. Vite embeds the bytes in the production module; the package
+also retains the original PNG for catalog distribution. This does not replace
+Host semantic action icons. The private package has no npm publication workflow;
+source installations consume this asset from the repository, and Check CI uploads
+the built runtime as `wallet-artifact`.
+
 ## Verification scope
 
 Normal checks cover types, artifact graph, canonical service behavior and lifecycle. Temporary fixtures and private IPC integration do not prove that a running Host installed this candidate or that Native end-to-end acceptance occurred. `dev:dry-run` validates the launcher Vite path without starting the native app. This delivery does not restart a preview, replace runtime plugins, merge or deploy.

@@ -16,7 +16,23 @@ globalThis.__cordisxSharedReactRuntime = {
   ui: new Proxy({}, { get: () => component }),
 }
 
-const { apply, inject, manifest, Config } = await import('../dist/runtime/module.js')
+const { apply, inject, manifest, Config, icon } = await import('../dist/runtime/module.js')
+
+test('built plugin brand icon preserves the selected 256px PNG without a runtime asset URL', async () => {
+  const { readFile } = await import('node:fs/promises')
+  const { createHash } = await import('node:crypto')
+  const source = await readFile(new URL('../src/assets/economy.png', import.meta.url))
+  assert.equal(icon.mediaType, 'image/png')
+  assert.match(icon.data, /^[A-Za-z0-9+/]+={0,2}$/)
+  const bytes = Buffer.from(icon.data, 'base64')
+  assert.deepEqual(bytes, source)
+  assert.equal(
+    createHash('sha256').update(bytes).digest('hex'),
+    '8216c4773d155fe2e7ef2a059b83e2a0f4110ca3da10b7abc9a3f651b5bd2990',
+  )
+  assert.equal(bytes.readUInt32BE(16), 256)
+  assert.equal(bytes.readUInt32BE(20), 256)
+})
 
 test('exports a minimal CordisX plugin module', () => {
   assert.equal(manifest.schemaVersion, 11)
@@ -55,6 +71,21 @@ test('formal artifact retains lazy modules and stylesheet with matching digests'
     assert.equal(bytes.length, file.byteLength)
     assert.equal(`sha256:${createHash('sha256').update(bytes).digest('hex')}`, file.digest)
   }
+})
+
+test('wallet package retains the original brand PNG and complete runtime graph', async () => {
+  const { execFileSync } = await import('node:child_process')
+  const { readFile } = await import('node:fs/promises')
+  const { fileURLToPath } = await import('node:url')
+  const [packed] = JSON.parse(execFileSync('npm', ['pack', '--ignore-scripts', '--dry-run', '--json'], {
+    cwd: fileURLToPath(new URL('..', import.meta.url)),
+    encoding: 'utf8',
+  }))
+  const paths = new Set(packed.files.map(file => file.path))
+  assert(paths.has('src/assets/economy.png'))
+  assert(paths.has('dist/runtime/artifact.json'))
+  const artifact = JSON.parse(await readFile(new URL('../dist/runtime/artifact.json', import.meta.url), 'utf8'))
+  for (const file of artifact.files) assert(paths.has('dist/runtime/' + file.path.replace(/^\.\//, '')))
 })
 
 test('activation registers valid localized routes and releases owned session', () => {
